@@ -1,0 +1,1985 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Checklist</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%235b9bd5'/><polyline points='9,17 13,22 23,11' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #eef0f5;
+    --surface: #ffffff;
+    --border: #dde1ea;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --accent: #3b82f6;
+    --accent-subtle: rgba(59,130,246,0.07);
+    --done-color: #9ca3af;
+    --toolbar-bg: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e14;
+      --surface: #14161f;
+      --border: #252836;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --accent: #60a5fa;
+      --accent-subtle: rgba(96,165,250,0.09);
+      --done-color: #4b5563;
+      --toolbar-bg: #14161f;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    }
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* --- Toolbar --- */
+
+  #toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  #toolbar h1 {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  #progress-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  #progress-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.1px;
+  }
+
+  #progress-bar-wrap {
+    width: 90px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #complete-badge,
+  #mini-complete-badge {
+    display: none;
+    flex-shrink: 0;
+  }
+  #complete-badge.visible,
+  #mini-complete-badge.visible {
+    display: inline;
+    animation: badgePop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes badgePop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7ec8fa);
+    border-radius: 99px;
+    transition: width 0.25s ease;
+    width: 0%;
+  }
+
+  #toolbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #app.mini #toolbar { display: none; }
+  #app.mini .panel-label { display: none; }
+
+  #mini-bar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 7px 48px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  #app.mini #mini-bar { display: flex; }
+
+  #mini-bar:hover { background: var(--bg); }
+
+  #mini-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  #mini-bar-wrap {
+    width: 90px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #mini-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7ec8fa);
+    border-radius: 99px;
+    transition: width 0.25s ease;
+    width: 0%;
+  }
+
+  #mini-bar-expand {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.4;
+    transition: opacity 0.12s;
+  }
+  #mini-bar:hover #mini-bar-expand { opacity: 0.9; }
+
+  /* --- Buttons --- */
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 500;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, box-shadow 0.12s;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+  }
+  button svg { flex-shrink: 0; }
+  button:hover {
+    background: var(--bg);
+    border-color: var(--text-muted);
+    color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.09);
+  }
+  button.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+  button.active svg { color: #fff; }
+
+  #toggle-input-btn.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    box-shadow: none;
+  }
+  #toggle-input-btn.active svg { color: var(--accent); }
+
+  /* --- Undo toast --- */
+
+  #toast {
+    position: fixed;
+    bottom: -72px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 12.5px;
+    white-space: nowrap;
+    z-index: 1000;
+    transition: bottom 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+  }
+  #toast.visible { bottom: 20px; }
+  #toast-msg { color: var(--text-muted); }
+  #toast-undo {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: none;
+    padding: 3px 10px;
+  }
+  #toast-undo:hover {
+    background: color-mix(in srgb, var(--accent) 85%, #000);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: none;
+  }
+  #toast-close { padding: 3px 6px; box-shadow: none; }
+  #toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--accent);
+    width: 100%;
+    transform-origin: left;
+    transform: scaleX(0);
+  }
+  @keyframes toastCountdown {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+
+  #save-dirty {
+    display: none; /* dirty-indicator disabled — always-on bug not yet resolved */
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-left: -2px;
+  }
+
+  @media (max-width: 540px) { .btn-text { display: none; } }
+
+  /* --- Help popover --- */
+
+  .help-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .help-panel {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    text-transform: none;
+    letter-spacing: normal;
+    width: 310px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+    z-index: 200;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+  }
+  #input-panel .help-panel {
+    right: auto;
+    left: 0;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .help-wrap:hover .help-panel,
+  .help-wrap:focus-within .help-panel {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.15s ease 0.35s, visibility 0.15s ease 0.35s;
+  }
+
+  .help-panel h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .help-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .help-panel td { padding: 2px 0; vertical-align: top; }
+  .help-panel td:first-child {
+    padding-right: 10px;
+    white-space: nowrap;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .help-panel td:last-child { color: var(--text-muted); }
+
+  .help-panel tr + tr td { border-top: 1px solid var(--border); padding-top: 4px; margin-top: 2px; }
+  .help-panel tr:first-child td { padding-top: 0; }
+
+  /* --- Panels --- */
+
+  #panels {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #input-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  #input-panel.hidden { display: none; }
+
+  #output-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 12px 5px 18px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .panel-label-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .panel-label-actions button {
+    padding: 3px 8px;
+    font-size: 11px;
+    box-shadow: none;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+
+
+  #md-input {
+    flex: 1;
+    padding: 16px 18px;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    background: var(--surface);
+    color: var(--text);
+    tab-size: 2;
+  }
+  #md-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  /* --- Output --- */
+
+  #checklist-output {
+    flex: 1;
+    padding: 14px 22px 24px;
+    overflow-y: auto;
+    background: var(--surface);
+  }
+
+  #checklist-inner {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* --- Custom checkbox --- */
+
+  .cb-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cb-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .cb-box {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    border: 1.5px solid color-mix(in srgb, var(--text-muted) 55%, var(--border));
+    border-radius: 4px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cb-label:hover .cb-box {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+  }
+
+  .cb-label input:checked ~ .cb-box {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+
+  .cb-box svg {
+    width: 9px;
+    height: 7px;
+    overflow: visible;
+  }
+
+  .cb-box polyline {
+    stroke-dasharray: 14;
+    stroke-dashoffset: 14;
+    transition: stroke-dashoffset 0.22s cubic-bezier(0.4, 0, 0.2, 1) 0.04s;
+  }
+
+  .cb-label input:checked ~ .cb-box polyline {
+    stroke-dashoffset: 0;
+  }
+
+  .cb-text {
+    flex: 1;
+    word-break: break-word;
+    font-size: 12.5px;
+    line-height: 1.5;
+    padding-top: 1px;
+    transition: color 0.15s ease;
+    user-select: text;
+  }
+
+  li.done .cb-text {
+    text-decoration: line-through;
+    color: var(--done-color);
+  }
+
+  input[data-state="2"] ~ .cb-box {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+    box-shadow: none;
+  }
+  input[data-state="2"] ~ .cb-box .cb-dash {
+    stroke-dashoffset: 0;
+  }
+
+  li.na .cb-text {
+    color: var(--done-color);
+  }
+
+  /* --- Collapsible sections --- */
+
+  details { margin-bottom: 2px; }
+
+  details > summary.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 8px 8px;
+    margin: 0 -8px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    border-radius: 6px 6px 0 0;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+  details > summary.section-heading::-webkit-details-marker { display: none; }
+  details:first-child > summary.section-heading { padding-top: 4px; }
+
+  details > summary.section-heading:hover {
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+
+  .section-arrow {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+    transition: transform 0.18s ease, color 0.14s ease;
+  }
+  details[open] > summary.section-heading .section-arrow { transform: rotate(90deg); }
+  details > summary.section-heading:hover .section-arrow { color: var(--accent); }
+
+  .section-check { display: none; }
+
+  details.section-complete { position: relative; }
+  details.section-complete::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    pointer-events: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .section-check { color: var(--accent); }
+    details.section-complete::after { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+  }
+
+  .section-na {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
+    opacity: 0.72;
+  }
+  .section-na::before { content: 'N/A'; }
+  .section-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .section-stats {
+    margin-left: 0;
+    width: 100px;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.14s, background 0.14s, border-color 0.14s;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+  }
+  .section-stats:hover {
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+  }
+  details > summary.section-heading:hover .section-stats { color: var(--accent); }
+
+  .section-body { padding: 2px 0 10px; }
+
+  .section-heading-plain {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 8px 8px;
+    margin: 0 -8px;
+  }
+  .section-heading-plain:first-child { padding-top: 10px; }
+  .section-heading-plain[data-depth="1"] { font-size: 14px; }
+  .section-heading-plain[data-depth="3"] { font-size: 12px; font-weight: 500; }
+  .section-heading-plain[data-depth="4"],
+  .section-heading-plain[data-depth="5"],
+  .section-heading-plain[data-depth="6"] { font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+
+  details[data-depth="1"] > summary.section-heading { font-size: 14px; }
+  details[data-depth="2"] > summary.section-heading { font-size: 13px; }
+  details[data-depth="3"] > summary.section-heading { font-size: 12px; font-weight: 500; }
+  details[data-depth="4"] > summary.section-heading,
+  details[data-depth="5"] > summary.section-heading,
+  details[data-depth="6"] > summary.section-heading { font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+
+  /* --- Lists --- */
+
+  #checklist-output ul { list-style: none; padding-left: 0; }
+  #checklist-output ul ul { padding-left: 22px; }
+
+  #checklist-output li {
+    display: flex;
+    align-items: flex-start;
+    padding: 4px 8px;
+    margin: 1px -8px;
+    border-radius: 6px;
+    transition: background 0.12s ease;
+  }
+  #checklist-output li:hover { background: var(--accent-subtle); }
+
+  .empty-hint {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.9;
+    padding-top: 6px;
+    opacity: 0.8;
+  }
+
+  .blank-line { height: 8px; }
+
+  #checklist-output li.md-block-li { display: block; padding: 0 0 0 25px; margin: 0; background: none; }
+  #checklist-output li.md-block-li:hover { background: none; }
+
+  .md-hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  .md-quote {
+    border-left: 3px solid var(--border);
+    margin: 2px 0;
+    padding: 4px 12px;
+    color: var(--text-muted);
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    font-size: 12.5px;
+  }
+  .md-quote:has(+ .md-quote) {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-radius: 0 4px 0 0;
+  }
+  .md-quote + .md-quote {
+    margin-top: 0;
+    padding-top: 0;
+    border-radius: 0;
+  }
+  .md-quote + .md-quote:not(:has(+ .md-quote)) {
+    border-radius: 0 0 4px 0;
+  }
+
+  /* --- Inline formatting --- */
+  .cb-text a, .non-list-line a, .section-heading a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .cb-text a:hover, .non-list-line a:hover { text-decoration: underline; }
+
+  .cb-text code, .non-list-line code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 0.88em;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .cb-text mark, .non-list-line mark {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .cb-text mark, .non-list-line mark {
+      background: #422006;
+      color: #fcd34d;
+    }
+  }
+
+  .non-list-line {
+    padding: 3px 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) {
+    #panels { flex-direction: column; }
+    #input-panel { border-right: none; border-bottom: 1px solid var(--border); flex: none; height: 50%; }
+    #output-panel { flex: 1; }
+    #input-panel.hidden { display: none; }
+  }
+
+  #print-summary { display: none; }
+
+  @media print {
+    html, body, #app { height: auto; background: white; }
+
+    #toolbar, #mini-bar, #input-panel, .panel-label { display: none !important; }
+
+    #print-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 0 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      font-size: 12px;
+      color: #555;
+      font-family: inherit;
+    }
+
+    #print-summary-bar-wrap {
+      width: 80px;
+      height: 4px;
+      background: #ddd;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    #print-summary-bar {
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 99px;
+    }
+
+    #panels, #output-panel {
+      display: block;
+      height: auto;
+      overflow: visible;
+    }
+
+    #checklist-output {
+      overflow: visible;
+      height: auto;
+      padding: 0;
+    }
+
+    #checklist-inner { max-width: none; }
+
+    details > .section-body { display: block !important; }
+
+    input[type="checkbox"] { display: none !important; }
+
+    details > summary.section-heading { user-select: text; cursor: default; }
+
+    .cb-box { border-color: #999 !important; }
+
+    #checklist-output li:hover { background: none; }
+
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <h1>Markdown Checklist</h1>
+
+    <div id="progress-group">
+      <span id="progress-label"></span>
+      <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+      <svg id="complete-badge" width="14" height="14" viewBox="0 0 16 16" fill="none" title="All tasks completed">
+        <circle cx="8" cy="8" r="7" fill="#22c55e"/>
+        <polyline points="4.5,8 7,10.5 11.5,5.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <div id="toolbar-actions">
+      <button id="toggle-input-btn" title="Toggle input panel">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="12" height="10" rx="1.5"/>
+          <path d="M6.5 3v10"/>
+        </svg>
+        <span class="btn-text">Editor</span>
+      </button>
+      <button id="collapse-btn" title="Collapse / expand all sections">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3l5 3.5 5-3.5"/>
+          <path d="M3 13l5-3.5 5 3.5"/>
+        </svg>
+        <span class="btn-text">Collapse</span>
+      </button>
+      <button id="mini-btn" title="Hide toolbar, show progress bar only">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 5h12"/>
+          <path d="M5 8.5h6"/>
+          <path d="M7 12h2"/>
+        </svg>
+        <span class="btn-text">Focus</span>
+      </button>
+      <span class="help-wrap">
+        <button id="main-help-btn" title="Help">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M6.5 6.3a1.6 1.6 0 013 .7c0 1.1-1.5 1.6-1.5 2.7"/>
+            <circle cx="8" cy="12" r=".6" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="btn-text">Help</span>
+        </button>
+        <div class="help-panel">
+          <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0 0 12px;">
+            Paste or edit markdown on the left — the checklist renders live on the right.<br>
+            <br>
+            Click a checkbox to cycle: unchecked → checked → not applicable (N/A, skip).<br>
+            Click the progress stats next to a section heading to change all items in that section.<br>
+            <br>
+            Everything is auto-saved in the browser and survives refresh and browser restarts.<br>
+            <br>
+            For maximum focus, hide the editor with <strong style="color:var(--text);">Editor</strong>, then switch to <strong style="color:var(--text);">Focus</strong> mode — only the checklist and progress bar remain.<br>
+            <br>
+            Each line in the editor becomes a separate element in the checklist — unlike standard markdown, a single line break is enough; no blank line needed. This also applies to blockquotes.<br>
+            N/A (<code style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;background:var(--accent-subtle);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--accent);">- [-]</code>) is not standard markdown.<br>
+            <br>
+            Use <strong style="color:var(--text);">Export</strong> to save the checklist as markdown — states are written as <code style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;background:var(--accent-subtle);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--accent);">- [ ]</code> / <code style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;background:var(--accent-subtle);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--accent);">- [x]</code> / <code style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;background:var(--accent-subtle);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--accent);">- [-]</code> and a progress summary is prepended as a blockquote — paste the file back to restore the exact state.
+          </p>
+          <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0 0 12px;">
+            A checklist has two lives: the <strong style="color:var(--text);">template</strong> — the blank, reusable structure you open with <strong style="color:var(--text);">Open</strong> and keep in version control — and the <strong style="color:var(--text);">run</strong> — the filled-out result you capture with <strong style="color:var(--text);">Export</strong> after completing a process. Keep them separate: the template stays clean for the next run; the exported result documents what happened.
+          </p>
+          <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;">Use <strong style="color:var(--text);">Syntax</strong> in the editor panel for the full reference and a built-in example.</p>
+          <a href="https://github.com/mischlrebl/markdown-checklist" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--text-muted);text-decoration:none;opacity:0.65;transition:opacity 0.12s,color 0.12s;" onmouseover="this.style.opacity=1;this.style.color='var(--accent)'" onmouseout="this.style.opacity=0.65;this.style.color='var(--text-muted)'">View source on GitHub ↗</a>
+        </div>
+      </span>
+    </div>
+
+  </div>
+
+  <div id="mini-bar" title="Click to restore toolbar">
+    <span id="mini-label"></span>
+    <div id="mini-bar-wrap"><div id="mini-bar-fill"></div></div>
+    <svg id="mini-complete-badge" width="14" height="14" viewBox="0 0 16 16" fill="none" title="All tasks completed">
+      <circle cx="8" cy="8" r="7" fill="#22c55e"/>
+      <polyline points="4.5,8 7,10.5 11.5,5.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg id="mini-bar-expand" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 11l-5-5M8 11l5-5"/>
+    </svg>
+  </div>
+
+  <div id="panels">
+    <div id="input-panel">
+      <div class="panel-label">
+        <span>Template</span>
+        <div class="panel-label-actions">
+          <button id="open-btn" title="Open markdown file">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1.5 12.5V7a1 1 0 011-1H6l1.5-2.5h7a1 1 0 011 1v8H2.5a1 1 0 01-1-1z"/>
+            </svg>
+            <span class="btn-text">Open</span>
+          </button>
+          <button id="save-btn" title="Save">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+              <path d="M5 2v4h6V2"/>
+              <path d="M5 10h6v4H5z"/>
+            </svg>
+            <span class="btn-text">Save</span>
+            <span id="save-dirty" hidden></span>
+          </button>
+          <button id="format-btn" title="Fix indentation of numbered and lettered lists">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4h12M2 8h9M2 12h9"/>
+              <path d="M13 7l2 1-2 1"/>
+            </svg>
+            Indent
+          </button>
+
+          <button id="clear-btn" title="Clear everything">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 4.5h11"/>
+              <path d="M5.5 4.5V3.5a.5.5 0 01.5-.5h4a.5.5 0 01.5.5v1"/>
+              <path d="M3.5 4.5l.75 8a1 1 0 001 .5h5.5a1 1 0 001-.5l.75-8"/>
+              <path d="M6.5 7.5v3M9.5 7.5v3"/>
+            </svg>
+            Clear
+          </button>
+          <span class="help-wrap">
+            <button id="help-btn" title="Syntax reference">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/>
+              </svg>
+              Syntax
+            </button>
+            <div class="help-panel">
+              <h3>Syntax</h3>
+              <table>
+                <tr><td>## Heading</td><td>Collapsible section</td></tr>
+                <tr><td>- [ ] text</td><td>Unchecked task</td></tr>
+                <tr><td>- [x] text</td><td>Pre-checked task</td></tr>
+                <tr><td>- [-] text</td><td>Pre-marked N/A task</td></tr>
+                <tr><td>- text</td><td>Bullet → checkbox</td></tr>
+                <tr><td>* text &nbsp;+ text</td><td>Also bullets</td></tr>
+                <tr><td>1. text</td><td>Numbered (number shown)</td></tr>
+                <tr><td>&nbsp;&nbsp;a. text</td><td>Letter sub-item (2 spaces indent)</td></tr>
+                <tr><td>&nbsp;&nbsp;- sub</td><td>2 spaces or tab = nesting</td></tr>
+                <tr><td>(blank line)</td><td>Visual spacer in output</td></tr>
+                <tr><td>plain text</td><td>Rendered as-is, no checkbox</td></tr>
+                <tr><td>---</td><td>Horizontal divider</td></tr>
+                <tr><td>&gt; text</td><td>Blockquote</td></tr>
+                <tr><td colspan="2" style="padding-top:8px;font-weight:600;color:var(--text);font-size:11px;">Inline formatting</td></tr>
+                <tr><td>**text**</td><td>Bold</td></tr>
+                <tr><td>*text*</td><td>Italic</td></tr>
+                <tr><td>`text`</td><td>Inline code</td></tr>
+                <tr><td>~~text~~</td><td>Strikethrough</td></tr>
+                <tr><td>==text==</td><td>Highlight</td></tr>
+                <tr><td>[label](url)</td><td>Link (opens in new tab)</td></tr>
+              </table>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+                <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px;">The example covers all syntax cases above.</p>
+                <button id="load-demo-btn">Load example</button>
+              </div>
+            </div>
+          </span>
+        </div>
+      </div>
+      <textarea id="md-input" spellcheck="false" autocomplete="off" placeholder="Paste your markdown list here…
+
+Example:
+## Shopping
+- [ ] Milk
+- [ ] Eggs
+  - [ ] Free range
+- [x] Bread
+
+## Work
+- Review pull request
+- [ ] Write tests
+  - Unit tests
+  - Integration tests
+1. Deploy to staging
+2. Notify team"></textarea>
+    </div>
+    <div id="output-panel">
+      <div class="panel-label">
+        <span>Run</span>
+        <div class="panel-label-actions">
+          <button id="check-all-btn" title="Check / uncheck all, except N/A">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 5l2.5 2.5 3.5-4"/>
+              <path d="M2.5 11l2.5 2.5 3.5-4"/>
+              <path d="M11.5 6.5h2M11.5 12h2"/>
+            </svg>
+            <span class="btn-text">Check all</span>
+          </button>
+          <button id="export-btn" title="Download checklist as markdown with all checkbox states — reimportable">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 2v9M5 8l3 3 3-3"/>
+              <path d="M3 13h10"/>
+            </svg>
+            <span class="btn-text">Export</span>
+          </button>
+          <button id="snapshot-btn" title="Save rendered output as test file for diffing">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 2v8M5 7l3 3 3-3"/>
+              <path d="M3 12h10"/>
+            </svg>
+            <span class="btn-text">Save test</span>
+          </button>
+        </div>
+      </div>
+      <div id="checklist-output">
+        <div id="print-summary">
+          <span id="print-summary-label"></span>
+          <div id="print-summary-bar-wrap"><div id="print-summary-bar" style="width:0%"></div></div>
+          <svg id="print-complete-badge" width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:none">
+            <circle cx="8" cy="8" r="7" fill="#22c55e"/>
+            <polyline points="4.5,8 7,10.5 11.5,5.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div id="checklist-inner"></div>
+      </div>
+    </div>
+  </div>
+  <div id="toast">
+    <span id="toast-msg"></span>
+    <button id="toast-undo">Undo</button>
+    <button id="toast-close" title="Dismiss">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/>
+      </svg>
+    </button>
+    <div id="toast-progress"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const LS_MD       = 'checklist-md';
+  const LS_ST       = 'checklist-state';
+  const LS_COLLAPSE = 'checklist-collapse';
+  const LS_HIDE     = 'checklist-hide';
+  const LS_MINI     = 'checklist-mini';
+
+  const SNAPSHOT_ENABLED = new URLSearchParams(location.search).has('savetest');
+
+  const DEMO = `# Feature Checklist
+
+## Introduction
+
+This is plain text — no checkbox, renders as-is. Emojis work too 😊
+Since there are no checkboxes in this section, no progress bar appears in the header. The text is long enough to show a soft line break.
+
+## Checkbox styles
+
+- [ ] Unchecked task
+- [x] Pre-checked task
+- [-] Not applicable (N/A) — excluded from progress total but shown with its own indicator on the section header. The [-] state is app-specific, not standard markdown ⚠️
+- A plain bullet becomes a checkbox automatically
+* Asterisk bullet also works
++ Plus bullet as well
+• Unrecognised bullet — no checkbox is created
+It is good practice not to mix bullet styles in the same list.
+
+### Numbered & lettered lists, Nesting
+
+1. First numbered item — the number is shown in the label
+2. Second numbered item
+3. Third item
+  a. Letter sub-point — indented one level below numbers
+  b. Another letter sub-point
+  C. Uppercase letter also works
+    1. an additional level deeper
+4. Back to top level
+
+#### Import with unindented lines
+
+Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use the \`Indent\` button to make the structure explicit in the source.
+1. Build
+2. Test
+a. Unit
+b. Integration
+1. Deploy
+
+## Fully completed section
+
+- [x] first
+- [x] second
+- [-] none
+
+## Inline formatting
+
+- **Bold** with double asterisks
+- *Italic* with single asterisks
+- \`inline code\` with backticks
+  to copy an \`example command\` place it outside a task (no checkbox, no interaction)
+- ~~Strikethrough~~ with double tildes
+- ==Highlighted== with double equals signs
+- [Markdown cheat sheet](https://www.markdownguide.org/cheat-sheet/) — click to open in a new tab; URL shown on hover
+- Combined: **bold and *italic* text** in one item
+
+> Blockquotes are useful for notes or context
+> Consecutive lines merge into one visual block
+---
+- [ ] Item after a horizontal divider
+  - sub-item
+  > sub blockquote
+
+## Non-standard line break behavior ⚠️
+
+Each line in the editor creates a new element — no blank line needed (unlike standard markdown).
+This is the second line, separated by a single newline.
+
+Blank lines add visual spacing between items:
+
+- [ ] Item before the gap
+- [ ] Another item before the gap
+
+- [ ] Item after the gap
+
+## Edge cases
+
+#### Parenthesis delimiter — normalised to dot in output
+
+1) First item with parenthesis
+2) Second item
+  a) Letter sub-item with parenthesis
+  b) Another one
+
+#### Letters at top level with numbered sub-items
+
+a. First letter item
+1. First numbered sub-item
+2. Second numbered sub-item
+b. Second letter item
+1. Another numbered sub-item
+
+## Font ligatures
+
+Inline \`code\` spans use the font stack \`SF Mono → Fira Code → Consolas\`. If **Fira Code** is installed on your system, character pairs render as single ligature glyphs:
+
+->  -->  =>  ==>  <-  <--  <->  <=>
+
+Ligatures are purely visual — the underlying characters are unchanged. No ligatures appear if Fira Code is not installed; the fallback fonts do not support them.`;
+
+
+  const CHEVRON = `<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4,2 8,6 4,10"/></svg>`;
+  const CHECK_SVG = `<svg viewBox="0 0 9 7" fill="none" aria-hidden="true"><polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6"/></svg>`;
+
+  // --- Parser ---
+
+  function indentLevel(line) {
+    let i = 0;
+    while (i < line.length && (line[i] === ' ' || line[i] === '\t')) {
+      i += line[i] === '\t' ? 2 : 1;
+    }
+    return Math.floor(i / 2);
+  }
+
+  function parseLine(raw) {
+    const level = indentLevel(raw);
+    const trimmed = raw.trimStart();
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)/);
+    if (headingMatch) return { type: 'heading', level, depth: headingMatch[1].length, text: headingMatch[2] };
+
+    const cbMatch = trimmed.match(/^[-*+]\s+\[( |x|X|-)\]\s+(.*)/);
+    if (cbMatch) {
+      const m = cbMatch[1].toLowerCase();
+      const initState = m === 'x' ? 1 : m === '-' ? 2 : 0;
+      return { type: 'item', level, checked: initState === 1, initState, text: cbMatch[2] };
+    }
+
+    const olMatch = trimmed.match(/^(\d+|[a-z])[.)]\s+(.*)/i);
+    if (olMatch) {
+      const isLetter = isNaN(parseInt(olMatch[1], 10));
+      const autoPromoted = isLetter && level === 0;
+      return { type: 'item', level: autoPromoted ? 1 : level, autoPromoted, checked: false, text: `${olMatch[1]}. ${olMatch[2]}` };
+    }
+
+    const ulMatch = trimmed.match(/^[-*+]\s+(.*)/);
+    if (ulMatch) return { type: 'item', level, checked: false, text: ulMatch[1] };
+
+    if (trimmed === '') return { type: 'blank' };
+    if (/^[-*_]{3,}\s*$/.test(trimmed)) return { type: 'hr' };
+    const quoteMatch = trimmed.match(/^>\s*(.*)/);
+    if (quoteMatch) return { type: 'quote', text: quoteMatch[1] };
+    return { type: 'text', text: trimmed };
+  }
+
+  function parseMarkdown(src) {
+    const lines = src.split('\n');
+    const raw = lines.map(parseLine);
+
+    // Promote numbered items that directly follow an auto-promoted item (letter or previously promoted number).
+    // Works both before Indent (items at level 0) and after Indent (items with explicit indentation).
+    // Only '1.' starts a new sub-list after letters (consistent with Indent button); higher numbers continue an open sub-list.
+    for (let i = 1; i < raw.length; i++) {
+      const n = raw[i];
+      if (n.type !== 'item' || !/^\d+\. /.test(n.text)) continue;
+      const prev = raw[i - 1];
+      if (!prev || !prev.autoPromoted || prev.level < 1) continue;
+      if (/^[a-z]\. /.test(prev.text)) {
+        if (!/^1\. /.test(n.text)) continue; // only '1.' opens a new sub-list after letters
+        n.level = prev.level + 1;
+      } else {
+        if (n.level > prev.level) continue; // already explicitly deeper, leave it
+        n.level = prev.level; // continue an already-open sub-list
+      }
+      n.autoPromoted = true;
+    }
+
+    const nodes = raw;
+    let itemIndex = 0;
+    let currentSection = '';
+    const occurrenceCount = {};
+    nodes.forEach(n => {
+      if (n.type === 'heading') { currentSection = n.text; return; }
+      if (n.type !== 'item') return;
+      n.index = itemIndex++;
+      const base = `${currentSection}||${n.text}`;
+      const occ = occurrenceCount[base] || 0;
+      n.key = `${base}||${occ}`;
+      occurrenceCount[base] = occ + 1;
+    });
+    return nodes;
+  }
+
+  // --- Renderer ---
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderInline(text) {
+    // Escape HTML first
+    let s = escapeHtml(text);
+
+    // Protect code spans with placeholders so inner content isn't processed
+    const codeSpans = [];
+    s = s.replace(/`([^`]+)`/g, (_, c) => {
+      codeSpans.push(`<code>${c}</code>`);
+      return `\x00${codeSpans.length - 1}\x00`;
+    });
+
+    // Links [label](url) — only allow safe schemes to prevent javascript: injection
+    s = s.replace(/\[([^\]]*)\]\(([^)]*)\)/g, (_, label, url) => {
+      const safe = /^(https?:|mailto:|\/|#)/i.test(url) ? url : '#';
+      return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    });
+
+    // Bold: **text** or __text__
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Italic: *text*
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Strikethrough: ~~text~~
+    s = s.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+    // Highlight: ==text==
+    s = s.replace(/==(.+?)==/g, '<mark>$1</mark>');
+
+    // Restore code spans
+    s = s.replace(/\x00(\d+)\x00/g, (_, i) => codeSpans[+i]);
+
+    return s;
+  }
+
+  function renderNodes(nodes, stateMap, collapseMap) {
+    const nonBlank = nodes.filter(n => n.type !== 'blank');
+    if (nonBlank.length === 0) {
+      return '<p class="empty-hint">Start typing in the editor, or open <strong>Help</strong> to learn more.</p>';
+    }
+
+    let html = '';
+    let openLevels = [];
+    let inSection = false;
+    let sectionIdx = -1;
+    let seenContent = false;
+
+    function closeLevels() {
+      while (openLevels.length > 0) { html += '</ul>'; openLevels.pop(); }
+    }
+    function closeLevelsDownTo(target) {
+      while (openLevels.length > 0 && openLevels[openLevels.length - 1] > target) {
+        html += '</ul>'; openLevels.pop();
+      }
+    }
+    function openLevel(level) { html += '<ul>'; openLevels.push(level); }
+    function closeSection() {
+      if (inSection) { closeLevels(); html += '</div></details>'; inSection = false; }
+    }
+    // Append a block element (hr, blockquote, p) respecting list context.
+    // Add new block node types here; the list-wrapping logic is handled once.
+    function appendBlock(block) {
+      if (openLevels.length > 0) html += `<li class="md-block-li">${block}</li>`;
+      else { closeLevelsDownTo(-1); html += block; }
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (node.type === 'blank') {
+        if (seenContent) { closeLevelsDownTo(-1); html += '<div class="blank-line"></div>'; }
+        continue;
+      }
+      seenContent = true;
+
+      if (node.type === 'heading') {
+        closeSection();
+        // Look ahead: is there any non-blank content before the next heading?
+        let hasContent = false;
+        for (let k = i + 1; k < nodes.length; k++) {
+          if (nodes[k].type === 'heading') break;
+          if (nodes[k].type !== 'blank') { hasContent = true; break; }
+        }
+        const depth = node.depth || 2;
+        if (!hasContent) {
+          html += `<div class="section-heading-plain" data-depth="${depth}">${renderInline(node.text)}</div>`;
+          inSection = false;
+          continue;
+        }
+        sectionIdx++;
+        const sectionKey = node.text.replace(/"/g, '&quot;');
+        const isOpen = collapseMap[node.text] !== true;
+        html += `<details data-section="${sectionIdx}" data-section-key="${sectionKey}" data-depth="${depth}"${isOpen ? ' open' : ''}>`;
+        html += `<summary class="section-heading">${CHEVRON}${renderInline(node.text)}<span class="section-check" data-section="${sectionIdx}" hidden></span><span class="section-right"><span class="section-na" data-section="${sectionIdx}" hidden></span><span class="section-stats" data-section="${sectionIdx}" title="Click to check / uncheck all in this section, except N/A"></span></span></summary>`;
+        html += `<div class="section-body">`;
+        inSection = true;
+        continue;
+      }
+
+      if (node.type === 'hr')    { closeLevelsDownTo(-1); html += '<hr class="md-hr">'; continue; }
+      if (node.type === 'quote') { appendBlock(`<blockquote class="md-quote">${renderInline(node.text)}</blockquote>`); continue; }
+      if (node.type === 'text')  { appendBlock(`<p class="non-list-line">${renderInline(node.text)}</p>`); continue; }
+
+      // type === 'item'
+      const lvl = node.level;
+      const state = itemState(node);
+
+      if (openLevels.length === 0) {
+        openLevel(lvl);
+      } else {
+        const top = openLevels[openLevels.length - 1];
+        if (lvl > top) {
+          openLevel(lvl);
+        } else if (lvl < top) {
+          closeLevelsDownTo(lvl);
+          if (openLevels.length === 0 || openLevels[openLevels.length - 1] !== lvl) openLevel(lvl);
+        }
+      }
+
+      const liClass = state === 1 ? ' class="done"' : state === 2 ? ' class="na"' : '';
+      const checkedAttr = state === 1 ? ' checked' : '';
+      html += `<li${liClass}><label class="cb-label">` +
+        `<input type="checkbox" data-idx="${node.key.replace(/"/g, '&quot;')}" data-state="${state}"${checkedAttr}>` +
+        `<span class="cb-box">${CHECK_SVG}</span>` +
+        `<span class="cb-text">${renderInline(node.text)}</span>` +
+        `</label></li>`;
+    }
+
+    closeSection();
+    while (openLevels.length > 0) { html += '</ul>'; openLevels.pop(); }
+    return html;
+  }
+
+  // --- State ---
+
+  function loadState()    { try { return JSON.parse(localStorage.getItem(LS_ST) || '{}'); } catch { return {}; } }
+  function saveState(m)   { try { localStorage.setItem(LS_ST, JSON.stringify(m)); } catch {} }
+  function loadCollapse() { try { return JSON.parse(localStorage.getItem(LS_COLLAPSE) || '{}'); } catch { return {}; } }
+  function saveCollapse(m){ try { localStorage.setItem(LS_COLLAPSE, JSON.stringify(m)); } catch {} }
+  function loadMd()       { return localStorage.getItem(LS_MD) || ''; }
+  function saveMd(text)   { try { localStorage.setItem(LS_MD, text); } catch {} }
+
+  // --- UI ---
+
+  const formatBtn      = document.getElementById('format-btn');
+  const textarea       = document.getElementById('md-input');
+  const output         = document.getElementById('checklist-output');
+  const outputContent  = document.getElementById('checklist-inner');
+  const clearBtn       = document.getElementById('clear-btn');
+  const checkAllBtn    = document.getElementById('check-all-btn');
+  const collapseBtn    = document.getElementById('collapse-btn');
+
+  function setCollapseBtn(allCollapsed) {
+    const txt   = collapseBtn.querySelector('.btn-text');
+    const paths = collapseBtn.querySelectorAll('svg path');
+    if (txt) txt.textContent = allCollapsed ? 'Expand' : 'Collapse';
+    if (paths.length === 2) {
+      paths[0].setAttribute('d', allCollapsed ? 'M3 6.5l5-3.5 5 3.5' : 'M3 3l5 3.5 5-3.5');
+      paths[1].setAttribute('d', allCollapsed ? 'M3 9.5l5 3.5 5-3.5' : 'M3 13l5-3.5 5 3.5');
+    }
+  }
+  function setCheckAllBtn(allDone) {
+    const txt   = checkAllBtn.querySelector('.btn-text');
+    const paths = checkAllBtn.querySelectorAll('svg path');
+    if (txt) txt.textContent = allDone ? 'Uncheck all' : 'Check all';
+    if (paths.length >= 2) {
+      paths[0].setAttribute('d', allDone ? 'M2.5 3.5l6 4M8.5 3.5l-6 4' : 'M2.5 5l2.5 2.5 3.5-4');
+      paths[1].setAttribute('d', allDone ? 'M2.5 9.5l6 4M8.5 9.5l-6 4' : 'M2.5 11l2.5 2.5 3.5-4');
+    }
+  }
+  const snapshotBtn    = document.getElementById('snapshot-btn');
+  const exportBtn      = document.getElementById('export-btn');
+  const toggleInputBtn = document.getElementById('toggle-input-btn');
+  const inputPanel     = document.getElementById('input-panel');
+  const progressLabel  = document.getElementById('progress-label');
+  const progressBar    = document.getElementById('progress-bar');
+  const completeBadge      = document.getElementById('complete-badge');
+  const miniCompleteBadge  = document.getElementById('mini-complete-badge');
+  const miniBtn           = document.getElementById('mini-btn');
+  const miniLabel         = document.getElementById('mini-label');
+  const miniBarFill       = document.getElementById('mini-bar-fill');
+  const miniBar           = document.getElementById('mini-bar');
+  const printSummaryLabel  = document.getElementById('print-summary-label');
+  const printSummaryBar    = document.getElementById('print-summary-bar');
+  const printCompleteBadge = document.getElementById('print-complete-badge');
+
+  let stateMap    = loadState();
+  let collapseMap = loadCollapse();
+  // parsedNodes is populated by render(); any function that reads it must ensure render() was called first.
+  let parsedNodes = [];
+  const printOpenStates = new WeakMap();
+
+  function render() {
+    parsedNodes = parseMarkdown(textarea.value);
+    outputContent.innerHTML = renderNodes(parsedNodes, stateMap, collapseMap);
+    updateSectionStats();
+    updateProgress();
+  }
+
+  function coerceState(v) { return v === true ? 1 : v === false ? 0 : (v || 0); }
+  function itemState(n) {
+    const def = Object.hasOwn(n, 'initState') ? n.initState : (n.checked ? 1 : 0);
+    return coerceState(Object.hasOwn(stateMap, n.key) ? stateMap[n.key] : def);
+  }
+
+  function updateProgress() {
+    const items = parsedNodes.filter(n => n.type === 'item');
+    const applicable = items.filter(n => itemState(n) !== 2);
+    const total = applicable.length;
+    if (items.length === 0) {
+      progressLabel.textContent = '';
+      progressBar.style.width = '0%';
+      miniLabel.textContent = '';
+      miniBarFill.style.width = '0%';
+      completeBadge.classList.remove('visible');
+      miniCompleteBadge.classList.remove('visible');
+      printSummaryLabel.textContent = '';
+      printSummaryBar.style.width = '0%';
+      printCompleteBadge.style.display = 'none';
+      setCheckAllBtn(false);
+      return;
+    }
+    const done = applicable.filter(n => itemState(n) === 1).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const allDone = total > 0 && done === total;
+    const naCount = items.length - total;
+    const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
+    const text = `${done}/${total} · ${pct}%${naSuffix}`;
+    progressLabel.textContent = text;
+    progressBar.style.width = `${pct}%`;
+    completeBadge.classList.toggle('visible', allDone);
+    miniCompleteBadge.classList.toggle('visible', allDone);
+    miniLabel.textContent = text;
+    miniBarFill.style.width = `${pct}%`;
+    printSummaryLabel.textContent = text;
+    printSummaryBar.style.width = `${pct}%`;
+    printCompleteBadge.style.display = allDone ? 'inline' : 'none';
+    setCheckAllBtn(allDone);
+  }
+
+  function updateSectionStats() {
+    outputContent.querySelectorAll('details[data-section]').forEach(det => {
+      const s    = det.dataset.section;
+      const span  = det.querySelector(`.section-stats[data-section="${s}"]`);
+      const check = det.querySelector(`.section-check[data-section="${s}"]`);
+      if (!span) return;
+      const all        = [...det.querySelectorAll('input[type="checkbox"]')];
+      const applicable = all.filter(cb => cb.dataset.state !== '2');
+      const done       = applicable.filter(cb => cb.dataset.state === '1');
+      const total      = applicable.length;
+      const allDone    = total > 0 && done.length === total;
+      const hasNa      = all.some(cb => cb.dataset.state === '2');
+      if (check) check.hidden = !allDone;
+      det.classList.toggle('section-complete', allDone);
+      const naBadge = det.querySelector(`.section-na[data-section="${s}"]`);
+      if (naBadge) naBadge.hidden = !hasNa;
+      if (total === 0) { span.textContent = ''; return; }
+      const pct = Math.round((done.length / total) * 100);
+      span.textContent = `${done.length}/${total} · ${pct}%`;
+    });
+  }
+
+  output.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+
+    const stats = e.target.closest('.section-stats');
+    if (stats) {
+      e.preventDefault();
+      e.stopPropagation();
+      const det = stats.closest('details[data-section]');
+      if (!det) return;
+      const boxes = [...det.querySelectorAll('input[type="checkbox"]')].filter(cb => cb.dataset.state !== '2');
+      const allChecked = boxes.length > 0 && boxes.every(cb => cb.dataset.state === '1');
+      const next = allChecked ? 0 : 1;
+      boxes.forEach(cb => {
+        const idx = cb.dataset.idx;
+        stateMap[idx] = next;
+        cb.dataset.state = next;
+        cb.checked = next === 1;
+        const li = cb.closest('li');
+        if (li) { li.classList.toggle('done', next === 1); li.classList.toggle('na', false); }
+      });
+      saveState(stateMap);
+      updateProgress();
+      updateSectionStats();
+      return;
+    }
+
+    const label = e.target.closest('.cb-label');
+    if (!label) return;
+    e.preventDefault();
+    const cb = label.querySelector('input[type="checkbox"]');
+    const idx = cb.dataset.idx;
+    const cur = coerceState(parseInt(cb.dataset.state, 10));
+    const next = (cur + 1) % 3;
+    stateMap[idx] = next;
+    cb.dataset.state = next;
+    cb.checked = next === 1;
+    const li = cb.closest('li');
+    if (li) { li.classList.toggle('done', next === 1); li.classList.toggle('na', next === 2); }
+    saveState(stateMap);
+    updateProgress();
+    updateSectionStats();
+  }, true);
+
+  output.addEventListener('toggle', (e) => {
+    if (e.target.tagName !== 'DETAILS' || !e.target.dataset.sectionKey) return;
+    collapseMap[e.target.dataset.sectionKey] = !e.target.open;
+    saveCollapse(collapseMap);
+  }, true);
+
+
+  textarea.addEventListener('input', () => {
+    saveMd(textarea.value);
+    updateDirty();
+    render();
+  });
+
+  function formatMarkdown(text) {
+    const lines = text.split('\n');
+    const out = [];
+    // stack entries: { type: 'number'|'letter', last: number|string }
+    const stack = [];
+
+    function markerOf(s) {
+      const n = s.match(/^(\d+)[.)]\s/);
+      if (n) return { type: 'number', val: parseInt(n[1], 10) };
+      const l = s.match(/^([a-zA-Z])[.)]\s/);
+      if (l) return { type: 'letter', val: l[1].toLowerCase() };
+      return null;
+    }
+
+    for (const line of lines) {
+      const trimmed = line.trimStart();
+      const hasIndent = line !== trimmed;
+
+      if (trimmed === '') { out.push(line); continue; }
+
+      // Already indented or heading → pass through; headings reset stack
+      if (hasIndent || /^#{1,6}\s/.test(trimmed)) {
+        if (/^#{1,6}\s/.test(trimmed)) stack.length = 0;
+        out.push(line);
+        continue;
+      }
+
+      const m = markerOf(trimmed);
+
+      // Non-list line at col 0 → pass through, reset stack
+      if (!m) { stack.length = 0; out.push(line); continue; }
+
+      let depth;
+      if (m.type === 'number') {
+        let found = -1;
+        for (let i = stack.length - 1; i >= 0; i--) {
+          if (stack[i].type === 'number') { found = i; break; }
+        }
+        // No prior number → push at current depth; val=1 → new sub-list, push deeper; otherwise same level as prior number
+        depth = (found === -1 || m.val === 1) ? stack.length : found;
+      } else {
+        let found = -1;
+        for (let i = stack.length - 1; i >= 0; i--) {
+          if (stack[i].type === 'letter') { found = i; break; }
+        }
+        // No prior letter → push deeper; otherwise stay at that letter level
+        depth = found === -1 ? stack.length : found;
+      }
+
+      stack.length = depth;
+      stack.push({ type: m.type, last: m.val });
+      out.push('  '.repeat(depth) + trimmed);
+    }
+
+    return out.join('\n');
+  }
+
+  formatBtn.addEventListener('click', () => {
+    const formatted = formatMarkdown(textarea.value);
+    if (formatted === textarea.value) return;
+    textarea.value = formatted;
+    saveMd(formatted);
+    render();
+  });
+
+  const FSA_SUPPORTED = 'showOpenFilePicker' in window;
+  let fileHandle   = null;
+  let savedContent = '';
+
+  const openBtn   = document.getElementById('open-btn');
+  const saveBtn   = document.getElementById('save-btn');
+  const saveDirty = document.getElementById('save-dirty');
+
+  function updateDirty() {
+    const dirty = fileHandle !== null && textarea.value !== savedContent;
+    saveDirty.hidden = !dirty;
+    saveBtn.title = fileHandle
+      ? (dirty ? 'Save — unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)')
+      : 'Save as… (Ctrl+S)';
+  }
+
+  function loadContent(text) {
+    textarea.value = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    stateMap    = {};
+    collapseMap = {};
+    saveMd(textarea.value);
+    saveState({});
+    saveCollapse({});
+    savedContent = textarea.value;
+    updateDirty();
+    render();
+  }
+
+  openBtn.addEventListener('click', async () => {
+    if (FSA_SUPPORTED) {
+      let handle;
+      try { [handle] = await window.showOpenFilePicker({ types: [{ description: 'Markdown / text', accept: { 'text/markdown': ['.md', '.txt'] } }] }); }
+      catch { return; }
+      fileHandle = handle;
+      const file = await handle.getFile();
+      loadContent(await file.text());
+    } else {
+      const input = document.createElement('input');
+      input.type   = 'file';
+      input.accept = '.md,.txt,text/plain,text/markdown';
+      input.onchange = async () => { if (input.files[0]) loadContent(await input.files[0].text()); };
+      input.click();
+    }
+  });
+
+  async function saveFile() {
+    if (FSA_SUPPORTED) {
+      try {
+        if (!fileHandle) {
+          fileHandle = await window.showSaveFilePicker({ suggestedName: 'checklist.md', types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }] });
+        }
+        const writable = await fileHandle.createWritable();
+        await writable.write(textarea.value);
+        await writable.close();
+        savedContent = textarea.value;
+        updateDirty();
+      } catch {} // user cancelled
+    } else {
+      const blob = new Blob([textarea.value], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'checklist.md';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 0);
+    }
+  }
+
+  saveBtn.addEventListener('click', saveFile);
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+  });
+
+  function loadDemo() {
+    fileHandle   = null;
+    savedContent = '';
+    textarea.value = DEMO;
+    stateMap = {};
+    collapseMap = {};
+    saveMd(DEMO);
+    saveState(stateMap);
+    saveCollapse(collapseMap);
+    setCollapseBtn(false);
+    updateDirty();
+    render();
+  }
+
+  const toastEl       = document.getElementById('toast');
+  const toastMsg      = document.getElementById('toast-msg');
+  const toastUndoBtn  = document.getElementById('toast-undo');
+  const toastCloseBtn = document.getElementById('toast-close');
+  const toastProgress = document.getElementById('toast-progress');
+  let toastTimer = null;
+
+  function showToast(msg, onUndo) {
+    clearTimeout(toastTimer);
+    toastMsg.textContent = msg;
+    toastProgress.style.animation = 'none';
+    toastEl.classList.add('visible');
+    toastProgress.getBoundingClientRect(); // force reflow to restart animation
+    toastProgress.style.animation = 'toastCountdown 5s linear forwards';
+    function dismiss() { clearTimeout(toastTimer); toastEl.classList.remove('visible'); }
+    toastUndoBtn.onclick  = () => { dismiss(); onUndo(); };
+    toastCloseBtn.onclick = dismiss;
+    toastTimer = setTimeout(dismiss, 5000);
+  }
+
+  document.getElementById('load-demo-btn').addEventListener('click', () => {
+    if (!textarea.value.trim()) { loadDemo(); return; }
+    const snap = { md: textarea.value, state: { ...stateMap }, collapse: { ...collapseMap } };
+    loadDemo();
+    showToast('Example loaded.', () => {
+      textarea.value = snap.md;
+      stateMap    = snap.state;
+      collapseMap = snap.collapse;
+      saveMd(snap.md);
+      saveState(snap.state);
+      saveCollapse(snap.collapse);
+      render();
+    });
+  });
+
+  collapseBtn.addEventListener('click', () => {
+    const details = [...outputContent.querySelectorAll('details[data-section]')];
+    if (!details.length) return;
+    const anyOpen = details.some(d => d.open);
+    details.forEach(d => {
+      d.open = !anyOpen;
+      collapseMap[d.dataset.sectionKey] = anyOpen;
+    });
+    saveCollapse(collapseMap);
+    setCollapseBtn(anyOpen);
+  });
+
+  if (!SNAPSHOT_ENABLED) snapshotBtn.style.display = 'none';
+
+  function exportMarkdown() {
+    const items = parsedNodes.filter(n => n.type === 'item');
+    const applicable = items.filter(n => itemState(n) !== 2);
+    const done = applicable.filter(n => itemState(n) === 1).length;
+    const total = applicable.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const naCount = items.length - total;
+    const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
+    const progressLine = `> ${done}/${total} · ${pct}%${naSuffix}`;
+
+    const STATE_CH = [' ', 'x', '-'];
+    const lines = [progressLine, ''];
+    for (const n of parsedNodes) {
+      if (n.type === 'blank')   { lines.push(''); continue; }
+      if (n.type === 'hr')      { lines.push('---'); continue; }
+      if (n.type === 'heading') { lines.push(`${'#'.repeat(n.depth)} ${n.text}`); continue; }
+      if (n.type === 'text')    { lines.push(n.text); continue; }
+      if (n.type === 'quote')   { lines.push(`> ${n.text}`); continue; }
+      if (n.type === 'item')    { lines.push(`${'  '.repeat(n.level)}- [${STATE_CH[itemState(n)]}] ${n.text}`); }
+    }
+    return lines.join('\n');
+  }
+
+  exportBtn.addEventListener('click', () => {
+    const md = exportMarkdown();
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const filename = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.md`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  snapshotBtn.addEventListener('click', () => {
+    const details = [...outputContent.querySelectorAll('details')];
+    const wasOpen = details.map(d => d.open);
+    details.forEach(d => { d.open = true; });
+    const content = outputContent.innerHTML.replace(/></g, '>\n<');
+    details.forEach((d, i) => { d.open = wasOpen[i]; });
+    const css = document.querySelector('style').textContent;
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checklist test</title>
+<style>${css}</style>
+</head>
+<body>
+<div id="checklist-output"><div id="checklist-inner">${content}</div></div>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const filename = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.html`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    const snap = {
+      md:      textarea.value,
+      state:   { ...stateMap },
+      collapse:{ ...collapseMap },
+      hide:    localStorage.getItem(LS_HIDE),
+      mini:    localStorage.getItem(LS_MINI)
+    };
+    textarea.value = '';
+    stateMap = {};
+    collapseMap = {};
+    saveMd('');
+    saveState({});
+    saveCollapse({});
+    localStorage.removeItem(LS_HIDE);
+    localStorage.removeItem(LS_MINI);
+    applyHideState(false);
+    applyMiniState(false);
+    setCollapseBtn(false);
+    render();
+    showToast('Cleared.', () => {
+      textarea.value = snap.md;
+      stateMap    = snap.state;
+      collapseMap = snap.collapse;
+      saveMd(snap.md);
+      saveState(snap.state);
+      saveCollapse(snap.collapse);
+      if (snap.hide !== null) localStorage.setItem(LS_HIDE, snap.hide); else localStorage.removeItem(LS_HIDE);
+      if (snap.mini !== null) localStorage.setItem(LS_MINI, snap.mini); else localStorage.removeItem(LS_MINI);
+      applyHideState(snap.hide === '1');
+      applyMiniState(snap.mini === '1');
+      render();
+      const det = [...outputContent.querySelectorAll('details[data-section]')];
+      setCollapseBtn(det.length > 0 && det.every(d => !d.open));
+    });
+  });
+
+  checkAllBtn.addEventListener('click', () => {
+    const items      = parsedNodes.filter(n => n.type === 'item');
+    const applicable = items.filter(n => itemState(n) !== 2);
+    const allDone    = applicable.length > 0 && applicable.every(n => itemState(n) === 1);
+    const snap = { ...stateMap };
+    applicable.forEach(n => { stateMap[n.key] = allDone ? 0 : 1; });
+    saveState(stateMap);
+    render();
+    showToast(allDone ? 'All unchecked.' : 'All checked.', () => {
+      stateMap = snap;
+      saveState(stateMap);
+      render();
+    });
+  });
+
+  function applyHideState(hidden) {
+    inputPanel.classList.toggle('hidden', hidden);
+    toggleInputBtn.classList.toggle('active', !hidden);
+  }
+
+  toggleInputBtn.addEventListener('click', () => {
+    const nowHidden = !inputPanel.classList.contains('hidden');
+    applyHideState(nowHidden);
+    localStorage.setItem(LS_HIDE, nowHidden ? '1' : '0');
+  });
+
+  function applyMiniState(mini) {
+    document.getElementById('app').classList.toggle('mini', mini);
+  }
+
+  miniBtn.addEventListener('click', () => {
+    const nowMini = !document.getElementById('app').classList.contains('mini');
+    applyMiniState(nowMini);
+    localStorage.setItem(LS_MINI, nowMini ? '1' : '0');
+  });
+
+  miniBar.addEventListener('click', () => {
+    applyMiniState(false);
+    localStorage.setItem(LS_MINI, '0');
+  });
+
+  window.addEventListener('beforeprint', () => {
+    outputContent.querySelectorAll('details').forEach(d => {
+      printOpenStates.set(d, d.open);
+      d.open = true;
+    });
+    outputContent.querySelectorAll('details > summary.section-heading').forEach(summary => {
+      const div = document.createElement('div');
+      div.style.cssText = 'font-size:13px;font-weight:600;border-bottom:1px solid #dde1ea;padding:8px 0 6px;margin-bottom:2px;';
+      [...summary.childNodes].forEach(node => {
+        if (node.nodeType === 1 && node.classList.contains('section-arrow')) return;
+        if (node.nodeType === 1 && node.classList.contains('section-stats')) return;
+        div.appendChild(node.cloneNode(true));
+      });
+      summary.setAttribute('data-ph-s', '1');
+      summary.style.display = 'none';
+      summary.after(div);
+    });
+    outputContent.querySelectorAll('.cb-label').forEach(label => {
+      const cb   = label.querySelector('input[type="checkbox"]');
+      const box  = label.querySelector('.cb-box');
+      const text = label.querySelector('.cb-text');
+      if (!cb || !box || !text) return;
+      const state = coerceState(parseInt(cb.dataset.state, 10));
+
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:flex-start;gap:9px;flex:1;min-width:0;';
+
+      const boxClone = box.cloneNode(true);
+      if (state === 1) {
+        boxClone.style.background = '#3b82f6';
+        boxClone.style.borderColor = '#3b82f6';
+        const pl = boxClone.querySelector('polyline');
+        if (pl) pl.style.strokeDashoffset = '0';
+      } else if (state === 2) {
+        boxClone.style.background = '#6b7280';
+        boxClone.style.borderColor = '#6b7280';
+        const dl = boxClone.querySelector('.cb-dash');
+        if (dl) dl.style.strokeDashoffset = '0';
+      }
+      div.appendChild(boxClone);
+
+      const textClone = text.cloneNode(true);
+      if (state === 1) { textClone.style.textDecoration = 'line-through'; textClone.style.color = '#9ca3af'; }
+      else if (state === 2) { textClone.style.color = '#9ca3af'; }
+      div.appendChild(textClone);
+
+      label.setAttribute('data-ph', '1');
+      label.style.display = 'none';
+      label.after(div);
+    });
+  });
+
+  window.addEventListener('afterprint', () => {
+    outputContent.querySelectorAll('details').forEach(d => {
+      d.open = printOpenStates.get(d) ?? false;
+      printOpenStates.delete(d);
+    });
+    outputContent.querySelectorAll('[data-ph]').forEach(label => {
+      if (label.nextElementSibling) label.nextElementSibling.remove();
+      label.style.display = '';
+      label.removeAttribute('data-ph');
+    });
+    outputContent.querySelectorAll('[data-ph-s]').forEach(summary => {
+      if (summary.nextElementSibling) summary.nextElementSibling.remove();
+      summary.style.display = '';
+      summary.removeAttribute('data-ph-s');
+    });
+  });
+
+    const saved = loadMd();
+  textarea.value = saved || DEMO;
+  applyHideState(localStorage.getItem(LS_HIDE) === '1');
+  applyMiniState(localStorage.getItem(LS_MINI) === '1');
+  render();
+})();
+</script>
+</body>
+</html>
