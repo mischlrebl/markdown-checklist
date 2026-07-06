@@ -836,13 +836,6 @@
         </svg>
         <span class="btn-text">Editor</span>
       </button>
-      <button id="collapse-btn" title="Collapse / expand all sections">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 3l5 3.5 5-3.5"/>
-          <path d="M3 13l5-3.5 5 3.5"/>
-        </svg>
-        <span class="btn-text">Collapse</span>
-      </button>
       <button id="mini-btn" title="Hide toolbar, show progress bar only">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 5h12"/>
@@ -996,6 +989,13 @@ Example:
       <div class="panel-label">
         <span>Run</span>
         <div class="panel-label-actions">
+          <button id="collapse-btn" title="Collapse / expand all sections">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3l5 3.5 5-3.5"/>
+              <path d="M3 13l5-3.5 5 3.5"/>
+            </svg>
+            <span class="btn-text">Collapse</span>
+          </button>
           <button id="check-all-btn" title="Check / uncheck all, except N/A">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2.5 5l2.5 2.5 3.5-4"/>
@@ -1559,6 +1559,18 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveMd(textarea.value);
     updateDirty();
     render();
+  });
+
+  textarea.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const { value, selectionStart } = textarea;
+    const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1;
+    const lineEnd = value.indexOf('\n', selectionStart);
+    const line = value.slice(lineStart, lineEnd === -1 ? value.length : lineEnd);
+    const indent = line.match(/^[ \t]*/)[0];
+    if (!indent) return;
+    e.preventDefault();
+    document.execCommand('insertText', false, '\n' + indent);
   });
 
   function formatMarkdown(text) {
