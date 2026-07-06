@@ -65,4 +65,10 @@ One HTML file. Open it in a browser, or use the [hosted version](https://mischlr
 
 ---
 
+## License
+
+[MIT](LICENSE)
+
+---
+
 *The app and this README were built with [Claude AI](https://claude.ai) by Anthropic, guided and shaped throughout by a human.*
