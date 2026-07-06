@@ -8,7 +8,7 @@ A single-file interactive checklist tool. Paste or open any markdown list — ge
 
 ## What it does
 
-Write or paste a markdown list in the editor on the left — the checklist renders live on the right. Check items off, mark steps as N/A, collapse sections, track progress. Everything is saved automatically in the browser and survives page reloads and restarts.
+Write or paste a markdown list in the editor on the left — the checklist **renders live** on the right. Check items off, mark steps as N/A, collapse sections, track progress. Everything is **saved automatically** in the browser and survives page reloads and restarts.
 
 The live preview makes the editor equally useful for **authoring and refining** checklists. Add a missing step mid-process, reorganize sections, or build a template from scratch — the structure and formatting are visible instantly as you type, without switching tools.
 
@@ -18,7 +18,7 @@ The live preview makes the editor equally useful for **authoring and refining** 
 
 - **Deployment runbooks** — paste a 20-step procedure, tick each step, mark environment-specific steps as N/A
 - **Code review** — structured criteria with collapsible sections per concern area
-- **Onboarding** — standard onboarding doc; each person tracks their own progress locally
+- **Daily to-do list** — jot down tasks as they come up, nest sub-tasks as they grow, and check them off through the day
 - **Incident response** — follow a runbook step-by-step under pressure
 
 ---
