@@ -313,8 +313,6 @@
     transition: opacity 0.15s ease, visibility 0.15s ease;
   }
   #input-panel .help-panel {
-    right: auto;
-    left: 0;
     max-width: calc(100vw - 2rem);
   }
 
@@ -367,6 +365,7 @@
     flex-direction: column;
     min-height: 0;
     border-right: 1px solid var(--border);
+    container: input-panel / inline-size;
   }
 
   #input-panel.hidden { display: none; }
@@ -376,6 +375,14 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    container: output-panel / inline-size;
+  }
+
+  @container input-panel (max-width: 520px) {
+    .panel-label-actions .btn-text { display: none; }
+  }
+  @container output-panel (max-width: 460px) {
+    .panel-label-actions .btn-text { display: none; }
   }
 
   .panel-label {
@@ -405,6 +412,75 @@
     text-transform: none;
     letter-spacing: 0;
     font-weight: 500;
+  }
+
+  /* --- Save split-button --- */
+
+  .save-split {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .save-split #save-btn {
+    border-radius: 6px 0 0 6px;
+    border-right: none;
+  }
+
+  .save-caret-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  #save-caret-btn {
+    padding: 3px 5px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .save-menu {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    min-width: 175px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+    z-index: 200;
+    transition: opacity 0.12s ease, visibility 0.12s ease;
+  }
+
+  .save-caret-wrap:hover .save-menu,
+  .save-caret-wrap:focus-within .save-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .save-menu button {
+    width: 100%;
+    justify-content: space-between;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .save-menu button:hover {
+    background: var(--accent-subtle);
+    color: var(--text);
+  }
+
+  .save-menu-shortcut {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    margin-left: 10px;
   }
 
 
@@ -903,21 +979,41 @@
             </svg>
             <span class="btn-text">Open</span>
           </button>
-          <button id="save-btn" title="Save">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
-              <path d="M5 2v4h6V2"/>
-              <path d="M5 10h6v4H5z"/>
-            </svg>
-            <span class="btn-text">Save</span>
-            <span id="save-dirty" hidden></span>
-          </button>
+          <span class="save-split">
+            <button id="save-btn" title="Save (Ctrl+S)">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                <path d="M5 2v4h6V2"/>
+                <path d="M5 10h6v4H5z"/>
+              </svg>
+              <span class="btn-text">Save</span>
+              <span id="save-dirty" hidden></span>
+            </button>
+            <span class="save-caret-wrap">
+              <button id="save-caret-btn" aria-label="More save options" aria-haspopup="menu">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6l4 4 4-4"/>
+                </svg>
+              </button>
+              <div class="save-menu">
+                <button id="save-as-btn" title="Save as… — always choose a new file">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                    <path d="M5 2v4h6V2"/>
+                    <path d="M6.5 9.5v4M4.5 11.5h4" stroke-width="1.5"/>
+                  </svg>
+                  <span>Save as…</span>
+                  <span class="save-menu-shortcut">Ctrl+Shift+S</span>
+                </button>
+              </div>
+            </span>
+          </span>
           <button id="format-btn" title="Fix indentation of numbered and lettered lists">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 4h12M2 8h9M2 12h9"/>
               <path d="M13 7l2 1-2 1"/>
             </svg>
-            Indent
+            <span class="btn-text">Indent</span>
           </button>
 
           <button id="clear-btn" title="Clear everything">
@@ -927,14 +1023,14 @@
               <path d="M3.5 4.5l.75 8a1 1 0 001 .5h5.5a1 1 0 001-.5l.75-8"/>
               <path d="M6.5 7.5v3M9.5 7.5v3"/>
             </svg>
-            Clear
+            <span class="btn-text">Clear</span>
           </button>
           <span class="help-wrap">
             <button id="help-btn" title="Syntax reference">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12"/>
               </svg>
-              Syntax
+              <span class="btn-text">Syntax</span>
             </button>
             <div class="help-panel">
               <h3>Syntax</h3>
@@ -1683,10 +1779,10 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     }
   });
 
-  async function saveFile() {
+  async function saveFile(forceNew) {
     if (FSA_SUPPORTED) {
       try {
-        if (!fileHandle) {
+        if (!fileHandle || forceNew) {
           fileHandle = await window.showSaveFilePicker({ suggestedName: 'checklist.md', types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }] });
         }
         const writable = await fileHandle.createWritable();
@@ -1705,10 +1801,15 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     }
   }
 
-  saveBtn.addEventListener('click', saveFile);
+  const saveAsBtn = document.getElementById('save-as-btn');
+
+  saveBtn.addEventListener('click', () => saveFile());
+  saveAsBtn.addEventListener('click', () => saveFile(true));
 
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 's') return;
+    e.preventDefault();
+    saveFile(e.shiftKey);
   });
 
   function loadDemo() {
@@ -1990,6 +2091,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   textarea.value = saved || DEMO;
   applyHideState(localStorage.getItem(LS_HIDE) === '1');
   applyMiniState(localStorage.getItem(LS_MINI) === '1');
+  updateDirty();
   render();
 })();
 </script>
