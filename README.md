@@ -67,7 +67,7 @@ One HTML file. Open it in a browser, or use the [hosted version](https://mischlr
 
 ## License
 
-[MIT](LICENSE)
+[GPL-3.0](LICENSE)
 
 ---
 
