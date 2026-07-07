@@ -300,7 +300,7 @@
     pointer-events: none;
     position: absolute;
     right: 0;
-    top: calc(100% + 8px);
+    top: 100%;
     text-transform: none;
     letter-spacing: normal;
     width: 310px;
@@ -400,9 +400,29 @@
     flex-shrink: 0;
   }
 
+  .panel-label-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  #current-file {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 500;
+    color: var(--text);
+    opacity: 0.7;
+  }
+
   .panel-label-actions {
     display: flex;
     gap: 4px;
+    flex-shrink: 0;
   }
 
   .panel-label-actions button {
@@ -416,33 +436,42 @@
 
   /* --- Save split-button --- */
 
-  .save-split {
+  .split-btn {
     position: relative;
     display: inline-flex;
   }
 
-  .save-split #save-btn {
+  .split-btn > button:first-child {
     border-radius: 6px 0 0 6px;
     border-right: none;
   }
 
-  .save-caret-wrap {
+  .split-btn:has(> .split-caret-wrap[hidden]) > button:first-child {
+    border-radius: 7px;
+    border-right: 1px solid var(--border);
+  }
+
+  .split-caret-wrap {
     position: relative;
     display: inline-flex;
   }
 
-  #save-caret-btn {
+  .split-caret-wrap[hidden] {
+    display: none;
+  }
+
+  .split-caret-btn {
     padding: 3px 5px;
     border-radius: 0 6px 6px 0;
   }
 
-  .save-menu {
+  .split-menu {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
     position: absolute;
     left: 0;
-    top: calc(100% + 6px);
+    top: 100%;
     min-width: 175px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -453,16 +482,16 @@
     transition: opacity 0.12s ease, visibility 0.12s ease;
   }
 
-  .save-caret-wrap:hover .save-menu,
-  .save-caret-wrap:focus-within .save-menu {
+  .split-caret-wrap:hover .split-menu,
+  .split-caret-wrap:focus-within .split-menu {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
   }
 
-  .save-menu button {
+  .split-menu button {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
     border: none;
     box-shadow: none;
     background: transparent;
@@ -472,15 +501,16 @@
     white-space: nowrap;
   }
 
-  .save-menu button:hover {
+  .split-menu button:hover {
     background: var(--accent-subtle);
     color: var(--text);
   }
 
-  .save-menu-shortcut {
+  .split-menu-shortcut {
     color: var(--text-muted);
     font-size: 10.5px;
-    margin-left: 10px;
+    margin-left: auto;
+    padding-left: 10px;
   }
 
 
@@ -936,6 +966,8 @@
             Click a checkbox to cycle: unchecked → checked → not applicable (N/A, skip).<br>
             Click the progress stats next to a section heading to change all items in that section.<br>
             <br>
+            <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load demo/Check all.<br>
+            <br>
             Everything is auto-saved in the browser and survives refresh and browser restarts.<br>
             <br>
             For maximum focus, hide the editor with <strong style="color:var(--text);">Editor</strong>, then switch to <strong style="color:var(--text);">Focus</strong> mode — only the checklist and progress bar remain.<br>
@@ -971,15 +1003,37 @@
   <div id="panels">
     <div id="input-panel">
       <div class="panel-label">
-        <span>Template</span>
+        <span class="panel-label-title">
+          <span>Template</span>
+          <span id="current-file" hidden></span>
+        </span>
         <div class="panel-label-actions">
-          <button id="open-btn" title="Open markdown file">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1.5 12.5V7a1 1 0 011-1H6l1.5-2.5h7a1 1 0 011 1v8H2.5a1 1 0 01-1-1z"/>
-            </svg>
-            <span class="btn-text">Open</span>
-          </button>
-          <span class="save-split">
+          <span class="split-btn">
+            <button id="open-btn" title="Open markdown file">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1.5 5.5a1 1 0 011-1H6l1.2 1.4h6.3a1 1 0 011 1v6.6a1 1 0 01-1 1h-11a1 1 0 01-1-1z"/>
+                <path d="M1.5 8.2h13"/>
+              </svg>
+              <span class="btn-text">Open</span>
+            </button>
+            <span class="split-caret-wrap" id="open-caret-wrap" hidden>
+              <button id="open-caret-btn" class="split-caret-btn" aria-label="More open options" aria-haspopup="menu">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6l4 4 4-4"/>
+                </svg>
+              </button>
+              <div class="split-menu">
+                <button id="reload-btn" title="Reload — reread the open file from disk, discarding edits">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="8" cy="8" r="5" stroke-dasharray="25 6.4" transform="rotate(-40 8 8)"/>
+                    <path d="M3.6 5.4L4.4 3.6L6.3 4.2"/>
+                  </svg>
+                  <span>Reload</span>
+                </button>
+              </div>
+            </span>
+          </span>
+          <span class="split-btn">
             <button id="save-btn" title="Save (Ctrl+S)">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
@@ -989,13 +1043,13 @@
               <span class="btn-text">Save</span>
               <span id="save-dirty" hidden></span>
             </button>
-            <span class="save-caret-wrap">
-              <button id="save-caret-btn" aria-label="More save options" aria-haspopup="menu">
+            <span class="split-caret-wrap">
+              <button id="save-caret-btn" class="split-caret-btn" aria-label="More save options" aria-haspopup="menu">
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 6l4 4 4-4"/>
                 </svg>
               </button>
-              <div class="save-menu">
+              <div class="split-menu">
                 <button id="save-as-btn" title="Save as… — always choose a new file">
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 2h8l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
@@ -1003,7 +1057,7 @@
                     <path d="M6.5 9.5v4M4.5 11.5h4" stroke-width="1.5"/>
                   </svg>
                   <span>Save as…</span>
-                  <span class="save-menu-shortcut">Ctrl+Shift+S</span>
+                  <span class="split-menu-shortcut">Ctrl+Shift+S</span>
                 </button>
               </div>
             </span>
@@ -1613,6 +1667,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       const boxes = [...det.querySelectorAll('input[type="checkbox"]')].filter(cb => cb.dataset.state !== '2');
       const allChecked = boxes.length > 0 && boxes.every(cb => cb.dataset.state === '1');
       const next = allChecked ? 0 : 1;
+      pushUndo();
       boxes.forEach(cb => {
         const idx = cb.dataset.idx;
         stateMap[idx] = next;
@@ -1634,6 +1689,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     const idx = cb.dataset.idx;
     const cur = coerceState(parseInt(cb.dataset.state, 10));
     const next = (cur + 1) % 3;
+    pushUndo();
     stateMap[idx] = next;
     cb.dataset.state = next;
     cb.checked = next === 1;
@@ -1651,10 +1707,18 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   }, true);
 
 
+  textarea.addEventListener('beforeinput', () => {
+    if (typingActive) return;
+    pushUndo();
+    typingActive = true;
+  });
+
   textarea.addEventListener('input', () => {
     saveMd(textarea.value);
     updateDirty();
     render();
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => { typingActive = false; }, 1200);
   });
 
   textarea.addEventListener('keydown', e => {
@@ -1729,6 +1793,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   formatBtn.addEventListener('click', () => {
     const formatted = formatMarkdown(textarea.value);
     if (formatted === textarea.value) return;
+    pushUndo();
     textarea.value = formatted;
     saveMd(formatted);
     render();
@@ -1738,9 +1803,12 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   let fileHandle   = null;
   let savedContent = '';
 
-  const openBtn   = document.getElementById('open-btn');
-  const saveBtn   = document.getElementById('save-btn');
-  const saveDirty = document.getElementById('save-dirty');
+  const openBtn       = document.getElementById('open-btn');
+  const openCaretWrap = document.getElementById('open-caret-wrap');
+  const reloadBtn     = document.getElementById('reload-btn');
+  const saveBtn       = document.getElementById('save-btn');
+  const saveDirty     = document.getElementById('save-dirty');
+  const currentFileEl = document.getElementById('current-file');
 
   function updateDirty() {
     const dirty = fileHandle !== null && textarea.value !== savedContent;
@@ -1748,6 +1816,13 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveBtn.title = fileHandle
       ? (dirty ? 'Save — unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)')
       : 'Save as… (Ctrl+S)';
+
+    currentFileEl.hidden = !fileHandle;
+    openCaretWrap.hidden = !fileHandle;
+    if (fileHandle) {
+      currentFileEl.textContent = fileHandle.name;
+      currentFileEl.title = fileHandle.name;
+    }
   }
 
   function loadContent(text) {
@@ -1779,11 +1854,23 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     }
   });
 
+  reloadBtn.addEventListener('click', async () => {
+    if (!fileHandle) return;
+    try {
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      pushUndo();
+      loadContent(text);
+      showToast('Reloaded.', performUndo);
+    } catch {} // file moved, deleted, or permission revoked
+  });
+
   async function saveFile(forceNew) {
     if (FSA_SUPPORTED) {
       try {
         if (!fileHandle || forceNew) {
-          fileHandle = await window.showSaveFilePicker({ suggestedName: 'checklist.md', types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }] });
+          const suggestedName = fileHandle ? fileHandle.name : 'checklist.md';
+          fileHandle = await window.showSaveFilePicker({ suggestedName, types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }] });
         }
         const writable = await fileHandle.createWritable();
         await writable.write(textarea.value);
@@ -1846,19 +1933,65 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     toastTimer = setTimeout(dismiss, 5000);
   }
 
+  // Single-level undo shared by checkbox toggles, editor edits, formatting,
+  // and the toast-driven actions below — Ctrl+Z restores whichever of these
+  // ran most recently; it's overwritten by the next one, not stacked.
+  let undoSnapshot  = null;
+  let typingActive  = false;
+  let typingTimer   = null;
+
+  function snapshotState() {
+    return {
+      md:       textarea.value,
+      state:    { ...stateMap },
+      collapse: { ...collapseMap },
+      fileHandle,
+      savedContent,
+      hide: localStorage.getItem(LS_HIDE),
+      mini: localStorage.getItem(LS_MINI)
+    };
+  }
+
+  function restoreSnapshot(snap) {
+    textarea.value = snap.md;
+    stateMap       = snap.state;
+    collapseMap    = snap.collapse;
+    fileHandle     = snap.fileHandle;
+    savedContent   = snap.savedContent;
+    saveMd(snap.md);
+    saveState(snap.state);
+    saveCollapse(snap.collapse);
+    if (snap.hide !== null) localStorage.setItem(LS_HIDE, snap.hide); else localStorage.removeItem(LS_HIDE);
+    if (snap.mini !== null) localStorage.setItem(LS_MINI, snap.mini); else localStorage.removeItem(LS_MINI);
+    applyHideState(snap.hide === '1');
+    applyMiniState(snap.mini === '1');
+    updateDirty();
+    render();
+    const det = [...outputContent.querySelectorAll('details[data-section]')];
+    setCollapseBtn(det.length > 0 && det.every(d => !d.open));
+  }
+
+  function pushUndo() { undoSnapshot = snapshotState(); typingActive = false; }
+
+  function performUndo() {
+    if (!undoSnapshot) return false;
+    const snap = undoSnapshot;
+    undoSnapshot = null;
+    restoreSnapshot(snap);
+    return true;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z' || e.shiftKey) return;
+    e.preventDefault();
+    performUndo();
+  });
+
   document.getElementById('load-demo-btn').addEventListener('click', () => {
     if (!textarea.value.trim()) { loadDemo(); return; }
-    const snap = { md: textarea.value, state: { ...stateMap }, collapse: { ...collapseMap } };
+    pushUndo();
     loadDemo();
-    showToast('Example loaded.', () => {
-      textarea.value = snap.md;
-      stateMap    = snap.state;
-      collapseMap = snap.collapse;
-      saveMd(snap.md);
-      saveState(snap.state);
-      saveCollapse(snap.collapse);
-      render();
-    });
+    showToast('Example loaded.', performUndo);
   });
 
   collapseBtn.addEventListener('click', () => {
@@ -1941,16 +2074,12 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   });
 
   clearBtn.addEventListener('click', () => {
-    const snap = {
-      md:      textarea.value,
-      state:   { ...stateMap },
-      collapse:{ ...collapseMap },
-      hide:    localStorage.getItem(LS_HIDE),
-      mini:    localStorage.getItem(LS_MINI)
-    };
+    pushUndo();
     textarea.value = '';
     stateMap = {};
     collapseMap = {};
+    fileHandle   = null;
+    savedContent = '';
     saveMd('');
     saveState({});
     saveCollapse({});
@@ -1959,37 +2088,20 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     applyHideState(false);
     applyMiniState(false);
     setCollapseBtn(false);
+    updateDirty();
     render();
-    showToast('Cleared.', () => {
-      textarea.value = snap.md;
-      stateMap    = snap.state;
-      collapseMap = snap.collapse;
-      saveMd(snap.md);
-      saveState(snap.state);
-      saveCollapse(snap.collapse);
-      if (snap.hide !== null) localStorage.setItem(LS_HIDE, snap.hide); else localStorage.removeItem(LS_HIDE);
-      if (snap.mini !== null) localStorage.setItem(LS_MINI, snap.mini); else localStorage.removeItem(LS_MINI);
-      applyHideState(snap.hide === '1');
-      applyMiniState(snap.mini === '1');
-      render();
-      const det = [...outputContent.querySelectorAll('details[data-section]')];
-      setCollapseBtn(det.length > 0 && det.every(d => !d.open));
-    });
+    showToast('Cleared.', performUndo);
   });
 
   checkAllBtn.addEventListener('click', () => {
     const items      = parsedNodes.filter(n => n.type === 'item');
     const applicable = items.filter(n => itemState(n) !== 2);
     const allDone    = applicable.length > 0 && applicable.every(n => itemState(n) === 1);
-    const snap = { ...stateMap };
+    pushUndo();
     applicable.forEach(n => { stateMap[n.key] = allDone ? 0 : 1; });
     saveState(stateMap);
     render();
-    showToast(allDone ? 'All unchecked.' : 'All checked.', () => {
-      stateMap = snap;
-      saveState(stateMap);
-      render();
-    });
+    showToast(allDone ? 'All unchecked.' : 'All checked.', performUndo);
   });
 
   function applyHideState(hidden) {
