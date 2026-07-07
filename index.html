@@ -670,8 +670,6 @@
   details[open] > summary.section-heading .section-arrow { transform: rotate(90deg); }
   details > summary.section-heading:hover .section-arrow { color: var(--accent); }
 
-  .section-check { display: none; }
-
   details.section-complete { position: relative; }
   details.section-complete::after {
     content: '';
@@ -685,7 +683,6 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    .section-check { color: var(--accent); }
     details.section-complete::after { background: color-mix(in srgb, var(--accent) 55%, transparent); }
   }
 
@@ -927,7 +924,7 @@
 
     <div id="progress-group">
       <span id="progress-label"></span>
-      <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+      <div id="progress-bar-wrap" role="progressbar" aria-labelledby="progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
       <svg id="complete-badge" width="14" height="14" viewBox="0 0 16 16" fill="none" title="All tasks completed">
         <circle cx="8" cy="8" r="7" fill="#22c55e"/>
         <polyline points="4.5,8 7,10.5 11.5,5.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1379,9 +1376,9 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       if (n.type === 'heading') { currentSection = n.text; return; }
       if (n.type !== 'item') return;
       n.index = itemIndex++;
-      const base = `${currentSection}||${n.text}`;
+      const base = `${currentSection}\x1F${n.text}`;
       const occ = occurrenceCount[base] || 0;
-      n.key = `${base}||${occ}`;
+      n.key = `${base}\x1F${occ}`;
       occurrenceCount[base] = occ + 1;
     });
     return nodes;
@@ -1486,7 +1483,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
         const sectionKey = node.text.replace(/"/g, '&quot;');
         const isOpen = collapseMap[node.text] !== true;
         html += `<details data-section="${sectionIdx}" data-section-key="${sectionKey}" data-depth="${depth}"${isOpen ? ' open' : ''}>`;
-        html += `<summary class="section-heading">${CHEVRON}${renderInline(node.text)}<span class="section-check" data-section="${sectionIdx}" hidden></span><span class="section-right"><span class="section-na" data-section="${sectionIdx}" hidden></span><span class="section-stats" data-section="${sectionIdx}" title="Click to check / uncheck all in this section, except N/A"></span></span></summary>`;
+        html += `<summary class="section-heading">${CHEVRON}${renderInline(node.text)}<span class="section-right"><span class="section-na" data-section="${sectionIdx}" hidden></span><span class="section-stats" data-section="${sectionIdx}" title="Click to check / uncheck all in this section, except N/A"></span></span></summary>`;
         html += `<div class="section-body">`;
         inSection = true;
         continue;
@@ -1569,6 +1566,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   const inputPanel     = document.getElementById('input-panel');
   const progressLabel  = document.getElementById('progress-label');
   const progressBar    = document.getElementById('progress-bar');
+  const progressBarWrap = document.getElementById('progress-bar-wrap');
   const completeBadge      = document.getElementById('complete-badge');
   const miniCompleteBadge  = document.getElementById('mini-complete-badge');
   const miniBtn           = document.getElementById('mini-btn');
@@ -1605,6 +1603,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     if (items.length === 0) {
       progressLabel.textContent = '';
       progressBar.style.width = '0%';
+      progressBarWrap.setAttribute('aria-valuenow', '0');
       miniLabel.textContent = '';
       miniBarFill.style.width = '0%';
       completeBadge.classList.remove('visible');
@@ -1623,6 +1622,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     const text = `${done}/${total} · ${pct}%${naSuffix}`;
     progressLabel.textContent = text;
     progressBar.style.width = `${pct}%`;
+    progressBarWrap.setAttribute('aria-valuenow', String(pct));
     completeBadge.classList.toggle('visible', allDone);
     miniCompleteBadge.classList.toggle('visible', allDone);
     miniLabel.textContent = text;
@@ -1637,7 +1637,6 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     outputContent.querySelectorAll('details[data-section]').forEach(det => {
       const s    = det.dataset.section;
       const span  = det.querySelector(`.section-stats[data-section="${s}"]`);
-      const check = det.querySelector(`.section-check[data-section="${s}"]`);
       if (!span) return;
       const all        = [...det.querySelectorAll('input[type="checkbox"]')];
       const applicable = all.filter(cb => cb.dataset.state !== '2');
@@ -1645,13 +1644,13 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       const total      = applicable.length;
       const allDone    = total > 0 && done.length === total;
       const hasNa      = all.some(cb => cb.dataset.state === '2');
-      if (check) check.hidden = !allDone;
       det.classList.toggle('section-complete', allDone);
       const naBadge = det.querySelector(`.section-na[data-section="${s}"]`);
       if (naBadge) naBadge.hidden = !hasNa;
-      if (total === 0) { span.textContent = ''; return; }
+      if (total === 0) { span.textContent = ''; span.hidden = true; return; }
       const pct = Math.round((done.length / total) * 100);
       span.textContent = `${done.length}/${total} · ${pct}%`;
+      span.hidden = false;
     });
   }
 
@@ -1833,6 +1832,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveState({});
     saveCollapse({});
     savedContent = textarea.value;
+    setCollapseBtn(false);
     updateDirty();
     render();
   }
@@ -2205,6 +2205,8 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   applyMiniState(localStorage.getItem(LS_MINI) === '1');
   updateDirty();
   render();
+  const initDet = [...outputContent.querySelectorAll('details[data-section]')];
+  setCollapseBtn(initDet.length > 0 && initDet.every(d => !d.open));
 })();
 </script>
 </body>
