@@ -276,13 +276,15 @@
   }
 
   #save-dirty {
-    display: none; /* dirty-indicator disabled — always-on bug not yet resolved */
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--accent);
+    background: transparent;
     flex-shrink: 0;
     margin-left: -2px;
+  }
+  #save-dirty.dirty {
+    background: var(--accent);
   }
 
   @media (max-width: 540px) { .btn-text { display: none; } }
@@ -415,8 +417,12 @@
     text-transform: none;
     letter-spacing: normal;
     font-weight: 500;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
     color: var(--text);
-    opacity: 0.7;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
   }
 
   .panel-label-actions {
@@ -511,6 +517,29 @@
     font-size: 10.5px;
     margin-left: auto;
     padding-left: 10px;
+  }
+
+  /* Check-all's caret sits near the right edge of the Run panel — open its menu leftward instead of off-screen. */
+  #check-all-caret-btn + .split-menu {
+    left: auto;
+    right: 0;
+  }
+
+  .format-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .format-wrap .split-menu {
+    left: 0;
+    right: auto;
+  }
+
+  .format-wrap:hover .split-menu,
+  .format-wrap:focus-within .split-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
   }
 
 
@@ -963,7 +992,7 @@
             Click a checkbox to cycle: unchecked → checked → not applicable (N/A, skip).<br>
             Click the progress stats next to a section heading to change all items in that section.<br>
             <br>
-            <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load demo/Check all.<br>
+            <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load demo/Check all. Only one (1) step back is kept.<br>
             <br>
             Everything is auto-saved in the browser and survives refresh and browser restarts.<br>
             <br>
@@ -1038,7 +1067,7 @@
                 <path d="M5 10h6v4H5z"/>
               </svg>
               <span class="btn-text">Save</span>
-              <span id="save-dirty" hidden></span>
+              <span id="save-dirty"></span>
             </button>
             <span class="split-caret-wrap">
               <button id="save-caret-btn" class="split-caret-btn" aria-label="More save options" aria-haspopup="menu">
@@ -1059,13 +1088,26 @@
               </div>
             </span>
           </span>
-          <button id="format-btn" title="Fix indentation of numbered and lettered lists">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 4h12M2 8h9M2 12h9"/>
-              <path d="M13 7l2 1-2 1"/>
-            </svg>
-            <span class="btn-text">Indent</span>
-          </button>
+          <span class="format-wrap">
+            <button id="format-btn" title="Format — fix list indentation, add bullets, or nest lines" aria-haspopup="menu">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 4h12M2 8h9M2 12h9"/>
+                <path d="M13 7l2 1-2 1"/>
+              </svg>
+              <span class="btn-text">Format</span>
+            </button>
+            <div class="split-menu">
+              <button id="fix-indent-btn" title="Fix indentation of numbered and lettered lists">
+                <span>Fix list indentation</span>
+              </button>
+              <button id="bullet-btn" title="Prefix selected lines with '- ' (or the current line, if nothing is selected)">
+                <span>Prefix with -</span>
+              </button>
+              <button id="nest-btn" title="Indent selected lines by 2 spaces (or the current line, if nothing is selected)">
+                <span>Indent +2 spaces</span>
+              </button>
+            </div>
+          </span>
 
           <button id="clear-btn" title="Clear everything">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -1143,14 +1185,32 @@ Example:
             </svg>
             <span class="btn-text">Collapse</span>
           </button>
-          <button id="check-all-btn" title="Check / uncheck all, except N/A">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2.5 5l2.5 2.5 3.5-4"/>
-              <path d="M2.5 11l2.5 2.5 3.5-4"/>
-              <path d="M11.5 6.5h2M11.5 12h2"/>
-            </svg>
-            <span class="btn-text">Check all</span>
-          </button>
+          <span class="split-btn">
+            <button id="check-all-btn" title="Check / uncheck all, except N/A">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2.5 5l2.5 2.5 3.5-4"/>
+                <path d="M2.5 11l2.5 2.5 3.5-4"/>
+                <path d="M11.5 6.5h2M11.5 12h2"/>
+              </svg>
+              <span class="btn-text">Check all</span>
+            </button>
+            <span class="split-caret-wrap">
+              <button id="check-all-caret-btn" class="split-caret-btn" aria-label="More check-all options" aria-haspopup="menu">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6l4 4 4-4"/>
+                </svg>
+              </button>
+              <div class="split-menu">
+                <button id="reset-all-btn" title="Uncheck everything, including items marked N/A">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.5 3.5l6 4M8.5 3.5l-6 4"/>
+                    <path d="M2.5 9.5l6 4M8.5 9.5l-6 4"/>
+                  </svg>
+                  <span>Reset all (incl. N/A)</span>
+                </button>
+              </div>
+            </span>
+          </span>
           <button id="export-btn" title="Download checklist as markdown with all checkbox states — reimportable">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M8 2v9M5 8l3 3 3-3"/>
@@ -1429,7 +1489,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   function renderNodes(nodes, stateMap, collapseMap) {
     const nonBlank = nodes.filter(n => n.type !== 'blank');
     if (nonBlank.length === 0) {
-      return '<p class="empty-hint">Start typing in the editor, or open <strong>Help</strong> to learn more.</p>';
+      return '<p class="empty-hint">Start typing in the editor, or open <strong>Syntax</strong> for the reference and a built-in example.</p>';
     }
 
     let html = '';
@@ -1534,12 +1594,15 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
   // --- UI ---
 
-  const formatBtn      = document.getElementById('format-btn');
+  const fixIndentBtn   = document.getElementById('fix-indent-btn');
+  const bulletBtn      = document.getElementById('bullet-btn');
+  const nestBtn        = document.getElementById('nest-btn');
   const textarea       = document.getElementById('md-input');
   const output         = document.getElementById('checklist-output');
   const outputContent  = document.getElementById('checklist-inner');
   const clearBtn       = document.getElementById('clear-btn');
   const checkAllBtn    = document.getElementById('check-all-btn');
+  const resetAllBtn    = document.getElementById('reset-all-btn');
   const collapseBtn    = document.getElementById('collapse-btn');
 
   function setCollapseBtn(allCollapsed) {
@@ -1789,14 +1852,55 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     return out.join('\n');
   }
 
-  formatBtn.addEventListener('click', () => {
+  fixIndentBtn.addEventListener('click', () => {
     const formatted = formatMarkdown(textarea.value);
     if (formatted === textarea.value) return;
     pushUndo();
     textarea.value = formatted;
     saveMd(formatted);
+    updateDirty();
     render();
   });
+
+  // Selected lines (or the current line, if nothing is selected), extended to full line boundaries.
+  function selectedLineRange(value, start, end) {
+    const blockStart = value.lastIndexOf('\n', start - 1) + 1;
+    let e = end;
+    if (e > start && value[e - 1] === '\n') e--; // exclude a trailing empty line the selection just touches
+    let blockEnd = value.indexOf('\n', e);
+    if (blockEnd === -1) blockEnd = value.length;
+    return { blockStart, blockEnd };
+  }
+
+  function applyLineTransform(transformLine) {
+    const { value, selectionStart, selectionEnd } = textarea;
+    const { blockStart, blockEnd } = selectedLineRange(value, selectionStart, selectionEnd);
+    const block = value.slice(blockStart, blockEnd);
+    const transformed = block.split('\n').map(transformLine).join('\n');
+    if (transformed === block) return;
+    pushUndo();
+    textarea.value = value.slice(0, blockStart) + transformed + value.slice(blockEnd);
+    textarea.selectionStart = blockStart;
+    textarea.selectionEnd = blockStart + transformed.length;
+    textarea.focus();
+    saveMd(textarea.value);
+    updateDirty();
+    render();
+  }
+
+  function bulletLine(line) {
+    const [, indent, rest] = line.match(/^([ \t]*)([\s\S]*)$/);
+    if (rest.trim() === '') return line;
+    if (/^(?:[-*+]|\d+[.)]|[a-zA-Z][.)])\s/.test(rest)) return line; // already a list marker
+    return indent + '- ' + rest;
+  }
+
+  function nestLine(line) {
+    return line === '' ? line : '  ' + line;
+  }
+
+  bulletBtn.addEventListener('click', () => applyLineTransform(bulletLine));
+  nestBtn.addEventListener('click', () => applyLineTransform(nestLine));
 
   const FSA_SUPPORTED = 'showOpenFilePicker' in window;
   let fileHandle   = null;
@@ -1811,7 +1915,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
   function updateDirty() {
     const dirty = fileHandle !== null && textarea.value !== savedContent;
-    saveDirty.hidden = !dirty;
+    saveDirty.classList.toggle('dirty', dirty);
     saveBtn.title = fileHandle
       ? (dirty ? 'Save — unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)')
       : 'Save as… (Ctrl+S)';
@@ -1820,7 +1924,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     openCaretWrap.hidden = !fileHandle;
     if (fileHandle) {
       currentFileEl.textContent = fileHandle.name;
-      currentFileEl.title = fileHandle.name;
+      currentFileEl.title = `Linked file — Save writes back to ${fileHandle.name}`;
     }
   }
 
@@ -2102,6 +2206,16 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveState(stateMap);
     render();
     showToast(allDone ? 'All unchecked.' : 'All checked.', performUndo);
+  });
+
+  resetAllBtn.addEventListener('click', () => {
+    const items = parsedNodes.filter(n => n.type === 'item');
+    if (items.length === 0) return;
+    pushUndo();
+    items.forEach(n => { stateMap[n.key] = 0; });
+    saveState(stateMap);
+    render();
+    showToast('All reset, including N/A.', performUndo);
   });
 
   function applyHideState(hidden) {
