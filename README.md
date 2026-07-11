@@ -45,8 +45,17 @@ Click any checkbox to cycle through all three states. The `- [-]` syntax is app-
 
 ---
 
+## Paste from Word, Outlook, or Google Docs
+
+Pasting a formatted checklist converts it to markdown automatically — nesting, checkboxes, and inline formatting (bold, italic, highlight) all carry over.
+
+Try it: open [`examples/word-paste-example.docx`](examples/word-paste-example.docx) in Word, select all (`Ctrl+A`), copy (`Ctrl+C`), and paste into the editor.
+
+---
+
 ## Features
 
+- Paste a formatted list from Word, Outlook, or Google Docs — converts to markdown automatically (nesting, checkboxes, bold/italic/highlight preserved)
 - Three-state checkboxes: unchecked → checked → N/A
 - Per-section and total progress tracking
 - Collapsible sections
