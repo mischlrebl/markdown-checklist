@@ -306,6 +306,8 @@
     text-transform: none;
     letter-spacing: normal;
     width: 310px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -519,8 +521,11 @@
     padding-left: 10px;
   }
 
-  /* Check-all's caret sits near the right edge of the Run panel — open its menu leftward instead of off-screen. */
-  #check-all-caret-btn + .split-menu {
+  /* These carets have more room to their left than their right at narrow widths — open their menus leftward instead of off-screen. */
+  #check-all-caret-btn + .split-menu,
+  #export-caret-btn + .split-menu,
+  #open-caret-btn + .split-menu,
+  #save-caret-btn + .split-menu {
     left: auto;
     right: 0;
   }
@@ -892,6 +897,7 @@
     #print-summary {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
       padding: 0 0 10px;
       margin-bottom: 10px;
@@ -989,10 +995,12 @@
           <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0 0 12px;">
             Paste or edit markdown on the left — the checklist renders live on the right.<br>
             <br>
+            Pasting a formatted checklist (Word, Outlook, Google Docs) converts it to markdown automatically — nesting, checkboxes, and formatting like bold/italic/highlight are preserved.<br>
+            <br>
             Click a checkbox to cycle: unchecked → checked → not applicable (N/A, skip).<br>
             Click the progress stats next to a section heading to change all items in that section.<br>
             <br>
-            <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load demo/Check all. Only one (1) step back is kept.<br>
+            <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load example/Check all. Only one (1) step back is kept.<br>
             <br>
             Everything is auto-saved in the browser and survives refresh and browser restarts.<br>
             <br>
@@ -1097,14 +1105,20 @@
               <span class="btn-text">Format</span>
             </button>
             <div class="split-menu">
-              <button id="fix-indent-btn" title="Fix indentation of numbered and lettered lists">
+              <button id="fix-indent-btn" title="Fix indentation of numbered and lettered lists — applies to the whole document">
                 <span>Fix list indentation</span>
+              </button>
+              <button id="nest-btn" title="Indent selected lines by 2 spaces (or the current line, if nothing is selected)">
+                <span>Indent +2 spaces</span>
+              </button>
+              <button id="unnest-btn" title="Outdent selected lines by 2 spaces (or the current line, if nothing is selected)">
+                <span>Outdent −2 spaces</span>
               </button>
               <button id="bullet-btn" title="Prefix selected lines with '- ' (or the current line, if nothing is selected)">
                 <span>Prefix with -</span>
               </button>
-              <button id="nest-btn" title="Indent selected lines by 2 spaces (or the current line, if nothing is selected)">
-                <span>Indent +2 spaces</span>
+              <button id="unbullet-btn" title="Remove the leading bullet, number, letter, or checkbox marker from selected lines (or the current line, if nothing is selected)">
+                <span>Remove prefix</span>
               </button>
             </div>
           </span>
@@ -1151,7 +1165,7 @@
               </table>
               <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
                 <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px;">The example covers all syntax cases above.</p>
-                <button id="load-demo-btn">Load example</button>
+                <button id="load-example-btn">Load example</button>
               </div>
             </div>
           </span>
@@ -1211,20 +1225,31 @@ Example:
               </div>
             </span>
           </span>
-          <button id="export-btn" title="Download checklist as markdown with all checkbox states — reimportable">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 2v9M5 8l3 3 3-3"/>
-              <path d="M3 13h10"/>
-            </svg>
-            <span class="btn-text">Export</span>
-          </button>
-          <button id="snapshot-btn" title="Save rendered output as test file for diffing">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 2v8M5 7l3 3 3-3"/>
-              <path d="M3 12h10"/>
-            </svg>
-            <span class="btn-text">Save test</span>
-          </button>
+          <span class="split-btn">
+            <button id="export-btn" title="Download checklist as markdown with all checkbox states — reimportable">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 2v9M5 8l3 3 3-3"/>
+                <path d="M3 13h10"/>
+              </svg>
+              <span class="btn-text">Export</span>
+            </button>
+            <span class="split-caret-wrap">
+              <button id="export-caret-btn" class="split-caret-btn" aria-label="More export options" aria-haspopup="menu">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6l4 4 4-4"/>
+                </svg>
+              </button>
+              <div class="split-menu">
+                <button id="snapshot-btn" title="Save a static HTML copy of the checklist — no app needed to view it">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 2v8M5 7l3 3 3-3"/>
+                    <path d="M3 12h10"/>
+                  </svg>
+                  <span>Save as HTML</span>
+                </button>
+              </div>
+            </span>
+          </span>
         </div>
       </div>
       <div id="checklist-output">
@@ -1260,9 +1285,7 @@ Example:
   const LS_HIDE     = 'checklist-hide';
   const LS_MINI     = 'checklist-mini';
 
-  const SNAPSHOT_ENABLED = new URLSearchParams(location.search).has('savetest');
-
-  const DEMO = `# Feature Checklist
+  const EXAMPLE = `# Feature Checklist
 
 ## Introduction
 
@@ -1293,7 +1316,7 @@ It is good practice not to mix bullet styles in the same list.
 
 #### Import with unindented lines
 
-Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use the \`Indent\` button to make the structure explicit in the source.
+Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use \`Format → Fix list indentation\` to make the structure explicit in the source.
 1. Build
 2. Test
 a. Unit
@@ -1375,6 +1398,12 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     return Math.floor(i / 2);
   }
 
+  // Valid lowercase Roman numeral (i, ii, iii, iv, ... up to mmmm-ish) — used to let
+  // three-level outline numbering (1 / a / i) go a level deeper than a single letter,
+  // without treating arbitrary multi-letter words ("Mr.", "vs.") as list markers.
+  const ROMAN_RE = /^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/i;
+  function isValidRoman(s) { return s.length > 0 && ROMAN_RE.test(s); }
+
   function parseLine(raw) {
     const level = indentLevel(raw);
     const trimmed = raw.trimStart();
@@ -1389,8 +1418,8 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       return { type: 'item', level, checked: initState === 1, initState, text: cbMatch[2] };
     }
 
-    const olMatch = trimmed.match(/^(\d+|[a-z])[.)]\s+(.*)/i);
-    if (olMatch) {
+    const olMatch = trimmed.match(/^(\d+|[a-zA-Z]+)[.)]\s+(.*)/);
+    if (olMatch && (/^\d+$/.test(olMatch[1]) || olMatch[1].length === 1 || isValidRoman(olMatch[1]))) {
       const isLetter = isNaN(parseInt(olMatch[1], 10));
       const autoPromoted = isLetter && level === 0;
       return { type: 'item', level: autoPromoted ? 1 : level, autoPromoted, checked: false, text: `${olMatch[1]}. ${olMatch[2]}` };
@@ -1411,8 +1440,8 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     const raw = lines.map(parseLine);
 
     // Promote numbered items that directly follow an auto-promoted item (letter or previously promoted number).
-    // Works both before Indent (items at level 0) and after Indent (items with explicit indentation).
-    // Only '1.' starts a new sub-list after letters (consistent with Indent button); higher numbers continue an open sub-list.
+    // Works both before "Fix list indentation" (items at level 0) and after (items with explicit indentation).
+    // Only '1.' starts a new sub-list after letters (consistent with "Fix list indentation"); higher numbers continue an open sub-list.
     for (let i = 1; i < raw.length; i++) {
       const n = raw[i];
       if (n.type !== 'item' || !/^\d+\. /.test(n.text)) continue;
@@ -1597,6 +1626,8 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   const fixIndentBtn   = document.getElementById('fix-indent-btn');
   const bulletBtn      = document.getElementById('bullet-btn');
   const nestBtn        = document.getElementById('nest-btn');
+  const unnestBtn      = document.getElementById('unnest-btn');
+  const unbulletBtn    = document.getElementById('unbullet-btn');
   const textarea       = document.getElementById('md-input');
   const output         = document.getElementById('checklist-output');
   const outputContent  = document.getElementById('checklist-inner');
@@ -1795,6 +1826,229 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     document.execCommand('insertText', false, '\n' + indent);
   });
 
+  // --- Paste: convert rich list content (Word/Outlook/Google Docs/etc.) to this app's markdown ---
+
+  const CHECKBOX_GLYPH_RE = /^[\s]*([☐☑☒□■✓✔✗✘])[\s]*/;
+  const CHECKED_GLYPHS = new Set(['☑', '☒', '■', '✓', '✔']);
+
+  function glyphCheckbox(text) {
+    const m = text.match(CHECKBOX_GLYPH_RE);
+    if (!m) return null;
+    return { checked: CHECKED_GLYPHS.has(m[1]), rest: text.slice(m[0].length) };
+  }
+
+  function collapseWs(s) { return s.replace(/\s+/g, ' ').trim(); }
+
+  // Word's highlighter tool doesn't emit a <mark> tag — it exports the highlighted
+  // run as a plain <span> with a background color (or mso-highlight) style instead.
+  function isHighlighted(el) {
+    const style = (el.getAttribute && el.getAttribute('style')) || '';
+    if (/mso-highlight\s*:\s*(?!none\b)\S/i.test(style)) return true;
+    const bg = style.match(/(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/i);
+    if (!bg) return false;
+    const val = bg[1].trim().toLowerCase();
+    return !!val && !['none', 'transparent', 'inherit', 'white', '#fff', '#ffffff'].includes(val);
+  }
+
+  function inlineMarkdown(node) {
+    let out = '';
+    node.childNodes.forEach(child => {
+      if (child.nodeType === Node.TEXT_NODE) { out += child.textContent; return; }
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+      const inner = inlineMarkdown(child);
+      const trimmed = inner.trim();
+      if (isHighlighted(child)) { out += trimmed ? `==${trimmed}==` : inner; return; }
+      switch (child.tagName.toLowerCase()) {
+        case 'b': case 'strong': out += trimmed ? `**${trimmed}**` : inner; break;
+        case 'i': case 'em':     out += trimmed ? `*${trimmed}*` : inner; break;
+        case 'code':             out += trimmed ? `\`${trimmed}\`` : inner; break;
+        case 's': case 'strike': case 'del': out += trimmed ? `~~${trimmed}~~` : inner; break;
+        case 'mark':             out += trimmed ? `==${trimmed}==` : inner; break;
+        case 'a': {
+          const href = child.getAttribute('href') || '';
+          out += trimmed ? `[${trimmed}](${href})` : inner;
+          break;
+        }
+        case 'br': out += ' '; break;
+        case 'input': break; // checkboxes are handled by the caller
+        default: out += inner;
+      }
+    });
+    return out;
+  }
+
+  // Word's fake-list export inserts a <span style="mso-list:Ignore"> holding the
+  // rendered bullet/number glyph (o, §, ·, etc.) right before the real text — it's
+  // a fallback for renderers that don't support mso-list CSS, and must be dropped
+  // since this app already derives its own bullet from the list nesting.
+  const NON_CONTENT_TAGS = new Set(['style', 'script', 'head', 'title', 'meta', 'link', 'xml', 'noscript']);
+
+  // Removes the mso-list:Ignore marker span and returns its trimmed text (the
+  // literal bullet/number Word pre-rendered for this item, e.g. "1.", "a.", "o"),
+  // or null if there wasn't one — the caller decides what to do with the marker.
+  function stripMsoIgnore(el) {
+    let marker = null;
+    el.querySelectorAll('[style*="mso-list" i]').forEach(n => {
+      if (/mso-list\s*:\s*ignore/i.test(n.getAttribute('style') || '')) {
+        if (marker === null) marker = collapseWs(n.textContent || '');
+        n.remove();
+      }
+    });
+    return marker;
+  }
+
+  // Word bakes the correct sequential number/letter/numeral directly into the marker
+  // text at copy time (it computes list numbering itself) — reuse it verbatim instead
+  // of re-counting, so restarts, custom start values, and deeper sub-levels just work.
+  // Numbers, single letters, and valid Roman numerals (ii., iii., iv., ...) all match
+  // this app's own ordered-item syntax (see parseLine); anything else falls back to a
+  // plain bullet rather than risk mangling an unrecognized marker.
+  // The trailing '.'/')' is required, not optional: Word's true numbered/lettered
+  // formats always render one (mso-level-text: "%1.", "%2)", ...), while its plain
+  // bullet formats often reuse a bare letter as the glyph itself (many templates use
+  // "o" for the second bullet level) — without this, that "o" bullet would be
+  // mistaken for a lettered list marker and show up literally as "o." in the label.
+  function orderedMarker(marker) {
+    if (!marker) return null;
+    const m = marker.match(/^\(?(\d+|[a-zA-Z]+)[.):]\)?$/);
+    if (!m) return null;
+    const token = m[1];
+    if (/^\d+$/.test(token) || token.length === 1 || isValidRoman(token)) return `${token}.`;
+    return null;
+  }
+
+  const CHECKBOX_CHARS = new Set(['☐', '☑', '☒', '□', '■', '✓', '✔', '✗', '✘']);
+  function markerCheckboxState(marker) {
+    const m = (marker || '').trim();
+    return CHECKBOX_CHARS.has(m) ? CHECKED_GLYPHS.has(m) : null;
+  }
+
+  // Extracts an <li>'s own text (excluding nested sub-lists) and its checkbox
+  // state, from either a real <input type=checkbox> or a leading glyph like ☐/☒.
+  function listItemLine(li) {
+    const clone = li.cloneNode(true);
+    clone.querySelectorAll('ul, ol').forEach(n => n.remove());
+    stripMsoIgnore(clone);
+    const input = clone.querySelector('input[type="checkbox"]');
+    let checked = null;
+    if (input) { checked = input.checked || input.hasAttribute('checked'); input.remove(); }
+    let text = collapseWs(inlineMarkdown(clone));
+    if (checked === null) {
+      const g = glyphCheckbox(text);
+      if (g) { checked = g.checked; text = collapseWs(g.rest); }
+    }
+    return { text, checked };
+  }
+
+  // Approximates nesting depth for Word's "fake list" paragraphs, which carry
+  // no real <ul>/<li> nesting — only an mso-list level or a margin-left indent.
+  function paraLevel(el) {
+    const style = (el.getAttribute && el.getAttribute('style')) || '';
+    const lvl = style.match(/mso-list:[^;]*\blevel(\d+)/i);
+    if (lvl) return Math.max(0, parseInt(lvl[1], 10) - 1);
+    const margin = style.match(/margin-left:\s*([\d.]+)(pt|in|px)/i);
+    if (margin) {
+      const val = parseFloat(margin[1]);
+      const pt = margin[2].toLowerCase() === 'in' ? val * 72 : margin[2].toLowerCase() === 'px' ? val * 0.75 : val;
+      return Math.max(0, Math.round(pt / 18));
+    }
+    return 0;
+  }
+
+  // Word marks every fake-list paragraph with an mso-list style even though there's
+  // no real <li> — that's the signal this paragraph is a bullet/number item, not just
+  // an indented block of body text, and needs this app's own '- ' bullet added back.
+  function isMsoListPara(el) {
+    return /mso-list\s*:/i.test((el.getAttribute && el.getAttribute('style')) || '');
+  }
+
+  function walkList(listEl, depth, out) {
+    let n = 0;
+    [...listEl.children].filter(c => c.tagName === 'LI').forEach(li => {
+      n++;
+      const { text, checked } = listItemLine(li);
+      const bullet = checked !== null ? `- [${checked ? 'x' : ' '}] ` : (listEl.tagName === 'OL' ? `${n}. ` : '- ');
+      out.push('  '.repeat(depth) + bullet + text);
+      [...li.children].filter(c => c.tagName === 'UL' || c.tagName === 'OL')
+        .forEach(sub => walkList(sub, depth + 1, out));
+    });
+  }
+
+  function walkBlock(el, out) {
+    const tag = el.tagName.toLowerCase();
+    if (NON_CONTENT_TAGS.has(tag)) return;
+    if (/^h[1-6]$/.test(tag)) {
+      out.push('#'.repeat(parseInt(tag[1], 10)) + ' ' + collapseWs(inlineMarkdown(el)));
+      return;
+    }
+    if (tag === 'ul' || tag === 'ol') { walkList(el, 0, out); return; }
+    if (tag === 'br') { out.push(''); return; }
+    // A <div> holding sibling <p>/<div> block children (e.g. Word's outer WordSection1
+    // wrapper, or Gmail/Docs one-div-per-line export) is a container, not a single
+    // paragraph — recurse into it below rather than flattening its children onto one line.
+    const isContainerDiv = tag === 'div' && [...el.children].some(c => c.tagName === 'P' || c.tagName === 'DIV');
+    if ((tag === 'p' || tag === 'div' || tag === 'li') && !isContainerDiv) {
+      const nested = [...el.children].filter(c => c.tagName === 'UL' || c.tagName === 'OL');
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('ul, ol').forEach(n => n.remove());
+      const marker = stripMsoIgnore(clone);
+      const text = collapseWs(inlineMarkdown(clone));
+      if (text) {
+        const g = glyphCheckbox(text);
+        const markerChecked = markerCheckboxState(marker);
+        const ordered = orderedMarker(marker);
+        const depth = paraLevel(el);
+        if (g) out.push('  '.repeat(depth) + `- [${g.checked ? 'x' : ' '}] ` + collapseWs(g.rest));
+        else if (markerChecked !== null) out.push('  '.repeat(depth) + `- [${markerChecked ? 'x' : ' '}] ` + text);
+        else if (ordered) out.push('  '.repeat(depth) + ordered + ' ' + text);
+        else if (isMsoListPara(el)) out.push('  '.repeat(depth) + '- ' + text);
+        else out.push('  '.repeat(depth) + text);
+      } else {
+        out.push('');
+      }
+      nested.forEach(sub => walkList(sub, paraLevel(el) + 1, out));
+      return;
+    }
+    // Unknown container — recurse into children instead of dropping their content
+    [...el.childNodes].forEach(child => {
+      if (child.nodeType === Node.ELEMENT_NODE) walkBlock(child, out);
+      else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) out.push(collapseWs(child.textContent));
+    });
+  }
+
+  function htmlListsToMarkdown(root) {
+    const out = [];
+    [...root.childNodes].forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE) walkBlock(node, out);
+      else if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) out.push(collapseWs(node.textContent));
+    });
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // Only intercept the paste when there's real list/checkbox structure to gain from —
+  // otherwise fall through to the browser's normal plain-text paste.
+  function isPastedListHtml(root) {
+    if (root.querySelector('li')) return true;
+    if (root.querySelector('input[type="checkbox"]')) return true;
+    if (root.querySelector('[style*="mso-list" i]')) return true;
+    return /[☐☑☒□■✓✔✗✘]/.test(root.textContent || '');
+  }
+
+  textarea.addEventListener('paste', (e) => {
+    const html = e.clipboardData && e.clipboardData.getData('text/html');
+    if (!html) return;
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const root = template.content;
+    if (!isPastedListHtml(root)) return;
+    const converted = htmlListsToMarkdown(root);
+    if (!converted) return;
+    e.preventDefault();
+    pushUndo();
+    document.execCommand('insertText', false, converted);
+    showToast('Converted pasted list to markdown.', performUndo);
+  });
+
   function formatMarkdown(text) {
     const lines = text.split('\n');
     const out = [];
@@ -1888,19 +2142,47 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     render();
   }
 
+  // Matches a line's leading list marker — checkbox, plain bullet, or ordered
+  // (number / single letter / valid Roman numeral, consistent with parseLine's own
+  // rules) — and returns the matched text, or null if the line has no marker.
+  function matchLeadingMarker(rest) {
+    const cb = rest.match(/^[-*+]\s+\[( |x|X|-)\]\s+/);
+    if (cb) return cb[0];
+    const bullet = rest.match(/^[-*+]\s+/);
+    if (bullet) return bullet[0];
+    const ol = rest.match(/^(\d+|[a-zA-Z]+)[.)]\s+/);
+    if (ol && (/^\d+$/.test(ol[1]) || ol[1].length === 1 || isValidRoman(ol[1]))) return ol[0];
+    return null;
+  }
+
   function bulletLine(line) {
     const [, indent, rest] = line.match(/^([ \t]*)([\s\S]*)$/);
     if (rest.trim() === '') return line;
-    if (/^(?:[-*+]|\d+[.)]|[a-zA-Z][.)])\s/.test(rest)) return line; // already a list marker
+    if (matchLeadingMarker(rest)) return line; // already a list marker
     return indent + '- ' + rest;
+  }
+
+  function unbulletLine(line) {
+    const [, indent, rest] = line.match(/^([ \t]*)([\s\S]*)$/);
+    const marker = matchLeadingMarker(rest);
+    return marker ? indent + rest.slice(marker.length) : line;
   }
 
   function nestLine(line) {
     return line === '' ? line : '  ' + line;
   }
 
+  function unnestLine(line) {
+    if (line.startsWith('  ')) return line.slice(2);
+    if (line.startsWith('\t')) return line.slice(1);
+    if (line.startsWith(' ')) return line.slice(1);
+    return line;
+  }
+
   bulletBtn.addEventListener('click', () => applyLineTransform(bulletLine));
+  unbulletBtn.addEventListener('click', () => applyLineTransform(unbulletLine));
   nestBtn.addEventListener('click', () => applyLineTransform(nestLine));
+  unnestBtn.addEventListener('click', () => applyLineTransform(unnestLine));
 
   const FSA_SUPPORTED = 'showOpenFilePicker' in window;
   let fileHandle   = null;
@@ -2003,13 +2285,13 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveFile(e.shiftKey);
   });
 
-  function loadDemo() {
+  function loadExample() {
     fileHandle   = null;
     savedContent = '';
-    textarea.value = DEMO;
+    textarea.value = EXAMPLE;
     stateMap = {};
     collapseMap = {};
-    saveMd(DEMO);
+    saveMd(EXAMPLE);
     saveState(stateMap);
     saveCollapse(collapseMap);
     setCollapseBtn(false);
@@ -2091,10 +2373,10 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     performUndo();
   });
 
-  document.getElementById('load-demo-btn').addEventListener('click', () => {
-    if (!textarea.value.trim()) { loadDemo(); return; }
+  document.getElementById('load-example-btn').addEventListener('click', () => {
+    if (!textarea.value.trim()) { loadExample(); return; }
     pushUndo();
-    loadDemo();
+    loadExample();
     showToast('Example loaded.', performUndo);
   });
 
@@ -2109,8 +2391,6 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     saveCollapse(collapseMap);
     setCollapseBtn(anyOpen);
   });
-
-  if (!SNAPSHOT_ENABLED) snapshotBtn.style.display = 'none';
 
   function exportMarkdown() {
     const items = parsedNodes.filter(n => n.type === 'item');
@@ -2154,16 +2434,42 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     details.forEach(d => { d.open = true; });
     const content = outputContent.innerHTML.replace(/></g, '>\n<');
     details.forEach((d, i) => { d.open = wasOpen[i]; });
+    const summary = document.getElementById('print-summary').outerHTML;
     const css = document.querySelector('style').textContent;
+    // #print-summary is normally only shown via the @media print rules already in `css`
+    // above — restate its visual styling unscoped so the total progress bar is visible
+    // in the snapshot on a normal screen too, not just when printing it.
+    const summaryCss = `
+#print-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+  color: #555;
+  font-family: inherit;
+}
+#print-summary-bar-wrap { width: 80px; height: 4px; background: #ddd; border-radius: 99px; overflow: hidden; }
+#print-summary-bar { height: 100%; background: #3b82f6; border-radius: 99px; }`;
+    // The app's own font (Inter) loads via this Google Fonts stylesheet in index.html's
+    // <head> — copying only the <style> block leaves the snapshot without it, silently
+    // falling back to the next font in the stack, so it must be relinked explicitly here.
+    const fontLinks = `
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">`;
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Checklist test</title>
-<style>${css}</style>
+<title>Checklist snapshot</title>${fontLinks}
+<style>${css}${summaryCss}</style>
 </head>
 <body>
-<div id="checklist-output"><div id="checklist-inner">${content}</div></div>
+<div id="checklist-output">${summary}<div id="checklist-inner">${content}</div></div>
 </body>
 </html>`;
     const blob = new Blob([html], { type: 'text/html' });
@@ -2314,7 +2620,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   });
 
     const saved = loadMd();
-  textarea.value = saved || DEMO;
+  textarea.value = saved || EXAMPLE;
   applyHideState(localStorage.getItem(LS_HIDE) === '1');
   applyMiniState(localStorage.getItem(LS_MINI) === '1');
   updateDirty();
