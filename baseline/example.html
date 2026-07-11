@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checklist test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #eef0f5;
+    --surface: #ffffff;
+    --border: #dde1ea;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --accent: #3b82f6;
+    --accent-subtle: rgba(59,130,246,0.07);
+    --done-color: #9ca3af;
+    --toolbar-bg: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e14;
+      --surface: #14161f;
+      --border: #252836;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --accent: #60a5fa;
+      --accent-subtle: rgba(96,165,250,0.09);
+      --done-color: #4b5563;
+      --toolbar-bg: #14161f;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    }
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* --- Toolbar --- */
+
+  #toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  #toolbar h1 {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  #progress-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  #progress-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.1px;
+  }
+
+  #progress-bar-wrap {
+    width: 90px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #complete-badge,
+  #mini-complete-badge {
+    display: none;
+    flex-shrink: 0;
+  }
+  #complete-badge.visible,
+  #mini-complete-badge.visible {
+    display: inline;
+    animation: badgePop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes badgePop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7ec8fa);
+    border-radius: 99px;
+    transition: width 0.25s ease;
+    width: 0%;
+  }
+
+  #toolbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #app.mini #toolbar { display: none; }
+  #app.mini .panel-label { display: none; }
+
+  #mini-bar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 7px 48px;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  #app.mini #mini-bar { display: flex; }
+
+  #mini-bar:hover { background: var(--bg); }
+
+  #mini-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  #mini-bar-wrap {
+    width: 90px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #mini-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7ec8fa);
+    border-radius: 99px;
+    transition: width 0.25s ease;
+    width: 0%;
+  }
+
+  #mini-bar-expand {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.4;
+    transition: opacity 0.12s;
+  }
+  #mini-bar:hover #mini-bar-expand { opacity: 0.9; }
+
+  /* --- Buttons --- */
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 500;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, box-shadow 0.12s;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+  }
+  button svg { flex-shrink: 0; }
+  button:hover {
+    background: var(--bg);
+    border-color: var(--text-muted);
+    color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.09);
+  }
+  button.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+  button.active svg { color: #fff; }
+
+  #toggle-input-btn.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    box-shadow: none;
+  }
+  #toggle-input-btn.active svg { color: var(--accent); }
+
+  /* --- Undo toast --- */
+
+  #toast {
+    position: fixed;
+    bottom: -72px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 12.5px;
+    white-space: nowrap;
+    z-index: 1000;
+    transition: bottom 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+  }
+  #toast.visible { bottom: 20px; }
+  #toast-msg { color: var(--text-muted); }
+  #toast-undo {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: none;
+    padding: 3px 10px;
+  }
+  #toast-undo:hover {
+    background: color-mix(in srgb, var(--accent) 85%, #000);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: none;
+  }
+  #toast-close { padding: 3px 6px; box-shadow: none; }
+  #toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--accent);
+    width: 100%;
+    transform-origin: left;
+    transform: scaleX(0);
+  }
+  @keyframes toastCountdown {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+
+  #save-dirty {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: transparent;
+    flex-shrink: 0;
+    margin-left: -2px;
+  }
+  #save-dirty.dirty {
+    background: var(--accent);
+  }
+
+  @media (max-width: 540px) { .btn-text { display: none; } }
+
+  /* --- Help popover --- */
+
+  .help-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .help-panel {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    text-transform: none;
+    letter-spacing: normal;
+    width: 310px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+    z-index: 200;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+  }
+  #input-panel .help-panel {
+    max-width: calc(100vw - 2rem);
+  }
+
+  .help-wrap:hover .help-panel,
+  .help-wrap:focus-within .help-panel {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.15s ease 0.35s, visibility 0.15s ease 0.35s;
+  }
+
+  .help-panel h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .help-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .help-panel td { padding: 2px 0; vertical-align: top; }
+  .help-panel td:first-child {
+    padding-right: 10px;
+    white-space: nowrap;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .help-panel td:last-child { color: var(--text-muted); }
+
+  .help-panel tr + tr td { border-top: 1px solid var(--border); padding-top: 4px; margin-top: 2px; }
+  .help-panel tr:first-child td { padding-top: 0; }
+
+  /* --- Panels --- */
+
+  #panels {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #input-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--border);
+    container: input-panel / inline-size;
+  }
+
+  #input-panel.hidden { display: none; }
+
+  #output-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    container: output-panel / inline-size;
+  }
+
+  @container input-panel (max-width: 520px) {
+    .panel-label-actions .btn-text { display: none; }
+  }
+  @container output-panel (max-width: 460px) {
+    .panel-label-actions .btn-text { display: none; }
+  }
+
+  .panel-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 12px 5px 18px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .panel-label-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  #current-file {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 500;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    color: var(--text);
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  .panel-label-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .panel-label-actions button {
+    padding: 3px 8px;
+    font-size: 11px;
+    box-shadow: none;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+
+  /* --- Save split-button --- */
+
+  .split-btn {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .split-btn > button:first-child {
+    border-radius: 6px 0 0 6px;
+    border-right: none;
+  }
+
+  .split-btn:has(> .split-caret-wrap[hidden]) > button:first-child {
+    border-radius: 7px;
+    border-right: 1px solid var(--border);
+  }
+
+  .split-caret-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .split-caret-wrap[hidden] {
+    display: none;
+  }
+
+  .split-caret-btn {
+    padding: 3px 5px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .split-menu {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    min-width: 175px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+    z-index: 200;
+    transition: opacity 0.12s ease, visibility 0.12s ease;
+  }
+
+  .split-caret-wrap:hover .split-menu,
+  .split-caret-wrap:focus-within .split-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .split-menu button {
+    width: 100%;
+    justify-content: flex-start;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .split-menu button:hover {
+    background: var(--accent-subtle);
+    color: var(--text);
+  }
+
+  .split-menu-shortcut {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    margin-left: auto;
+    padding-left: 10px;
+  }
+
+  /* Check-all's and Export's carets sit near the right edge of the Run panel — open their menus leftward instead of off-screen. */
+  #check-all-caret-btn + .split-menu,
+  #export-caret-btn + .split-menu {
+    left: auto;
+    right: 0;
+  }
+
+  .format-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .format-wrap .split-menu {
+    left: 0;
+    right: auto;
+  }
+
+  .format-wrap:hover .split-menu,
+  .format-wrap:focus-within .split-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+
+  #md-input {
+    flex: 1;
+    padding: 16px 18px;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    background: var(--surface);
+    color: var(--text);
+    tab-size: 2;
+  }
+  #md-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  /* --- Output --- */
+
+  #checklist-output {
+    flex: 1;
+    padding: 14px 22px 24px;
+    overflow-y: auto;
+    background: var(--surface);
+  }
+
+  #checklist-inner {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* --- Custom checkbox --- */
+
+  .cb-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cb-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .cb-box {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    border: 1.5px solid color-mix(in srgb, var(--text-muted) 55%, var(--border));
+    border-radius: 4px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cb-label:hover .cb-box {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+  }
+
+  .cb-label input:checked ~ .cb-box {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+
+  .cb-box svg {
+    width: 9px;
+    height: 7px;
+    overflow: visible;
+  }
+
+  .cb-box polyline {
+    stroke-dasharray: 14;
+    stroke-dashoffset: 14;
+    transition: stroke-dashoffset 0.22s cubic-bezier(0.4, 0, 0.2, 1) 0.04s;
+  }
+
+  .cb-label input:checked ~ .cb-box polyline {
+    stroke-dashoffset: 0;
+  }
+
+  .cb-text {
+    flex: 1;
+    word-break: break-word;
+    font-size: 12.5px;
+    line-height: 1.5;
+    padding-top: 1px;
+    transition: color 0.15s ease;
+    user-select: text;
+  }
+
+  li.done .cb-text {
+    text-decoration: line-through;
+    color: var(--done-color);
+  }
+
+  input[data-state="2"] ~ .cb-box {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+    box-shadow: none;
+  }
+  input[data-state="2"] ~ .cb-box .cb-dash {
+    stroke-dashoffset: 0;
+  }
+
+  li.na .cb-text {
+    color: var(--done-color);
+  }
+
+  /* --- Collapsible sections --- */
+
+  details { margin-bottom: 2px; }
+
+  details > summary.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 8px 8px;
+    margin: 0 -8px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    border-radius: 6px 6px 0 0;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+  details > summary.section-heading::-webkit-details-marker { display: none; }
+  details:first-child > summary.section-heading { padding-top: 4px; }
+
+  details > summary.section-heading:hover {
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+
+  .section-arrow {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+    transition: transform 0.18s ease, color 0.14s ease;
+  }
+  details[open] > summary.section-heading .section-arrow { transform: rotate(90deg); }
+  details > summary.section-heading:hover .section-arrow { color: var(--accent); }
+
+  details.section-complete { position: relative; }
+  details.section-complete::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    pointer-events: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    details.section-complete::after { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+  }
+
+  .section-na {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
+    opacity: 0.72;
+  }
+  .section-na::before { content: 'N/A'; }
+  .section-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .section-stats {
+    margin-left: 0;
+    width: 100px;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.14s, background 0.14s, border-color 0.14s;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+  }
+  .section-stats:hover {
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+  }
+  details > summary.section-heading:hover .section-stats { color: var(--accent); }
+
+  .section-body { padding: 2px 0 10px; }
+
+  .section-heading-plain {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 8px 8px;
+    margin: 0 -8px;
+  }
+  .section-heading-plain:first-child { padding-top: 10px; }
+  .section-heading-plain[data-depth="1"] { font-size: 14px; }
+  .section-heading-plain[data-depth="3"] { font-size: 12px; font-weight: 500; }
+  .section-heading-plain[data-depth="4"],
+  .section-heading-plain[data-depth="5"],
+  .section-heading-plain[data-depth="6"] { font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+
+  details[data-depth="1"] > summary.section-heading { font-size: 14px; }
+  details[data-depth="2"] > summary.section-heading { font-size: 13px; }
+  details[data-depth="3"] > summary.section-heading { font-size: 12px; font-weight: 500; }
+  details[data-depth="4"] > summary.section-heading,
+  details[data-depth="5"] > summary.section-heading,
+  details[data-depth="6"] > summary.section-heading { font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+
+  /* --- Lists --- */
+
+  #checklist-output ul { list-style: none; padding-left: 0; }
+  #checklist-output ul ul { padding-left: 22px; }
+
+  #checklist-output li {
+    display: flex;
+    align-items: flex-start;
+    padding: 4px 8px;
+    margin: 1px -8px;
+    border-radius: 6px;
+    transition: background 0.12s ease;
+  }
+  #checklist-output li:hover { background: var(--accent-subtle); }
+
+  .empty-hint {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.9;
+    padding-top: 6px;
+    opacity: 0.8;
+  }
+
+  .blank-line { height: 8px; }
+
+  #checklist-output li.md-block-li { display: block; padding: 0 0 0 25px; margin: 0; background: none; }
+  #checklist-output li.md-block-li:hover { background: none; }
+
+  .md-hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  .md-quote {
+    border-left: 3px solid var(--border);
+    margin: 2px 0;
+    padding: 4px 12px;
+    color: var(--text-muted);
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    font-size: 12.5px;
+  }
+  .md-quote:has(+ .md-quote) {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-radius: 0 4px 0 0;
+  }
+  .md-quote + .md-quote {
+    margin-top: 0;
+    padding-top: 0;
+    border-radius: 0;
+  }
+  .md-quote + .md-quote:not(:has(+ .md-quote)) {
+    border-radius: 0 0 4px 0;
+  }
+
+  /* --- Inline formatting --- */
+  .cb-text a, .non-list-line a, .section-heading a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .cb-text a:hover, .non-list-line a:hover { text-decoration: underline; }
+
+  .cb-text code, .non-list-line code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 0.88em;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .cb-text mark, .non-list-line mark {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .cb-text mark, .non-list-line mark {
+      background: #422006;
+      color: #fcd34d;
+    }
+  }
+
+  .non-list-line {
+    padding: 3px 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) {
+    #panels { flex-direction: column; }
+    #input-panel { border-right: none; border-bottom: 1px solid var(--border); flex: none; height: 50%; }
+    #output-panel { flex: 1; }
+    #input-panel.hidden { display: none; }
+  }
+
+  #print-summary { display: none; }
+
+  @media print {
+    html, body, #app { height: auto; background: white; }
+
+    #toolbar, #mini-bar, #input-panel, .panel-label { display: none !important; }
+
+    #print-summary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 0 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      font-size: 12px;
+      color: #555;
+      font-family: inherit;
+    }
+
+    #print-summary-bar-wrap {
+      width: 80px;
+      height: 4px;
+      background: #ddd;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    #print-summary-bar {
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 99px;
+    }
+
+    #panels, #output-panel {
+      display: block;
+      height: auto;
+      overflow: visible;
+    }
+
+    #checklist-output {
+      overflow: visible;
+      height: auto;
+      padding: 0;
+    }
+
+    #checklist-inner { max-width: none; }
+
+    details > .section-body { display: block !important; }
+
+    input[type="checkbox"] { display: none !important; }
+
+    details > summary.section-heading { user-select: text; cursor: default; }
+
+    .cb-box { border-color: #999 !important; }
+
+    #checklist-output li:hover { background: none; }
+
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+#print-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+  color: #555;
+  font-family: inherit;
+}
+#print-summary-bar-wrap { width: 80px; height: 4px; background: #ddd; border-radius: 99px; overflow: hidden; }
+#print-summary-bar { height: 100%; background: #3b82f6; border-radius: 99px; }</style>
+</head>
+<body>
+<div id="checklist-output"><div id="print-summary">
+          <span id="print-summary-label">3/41 · 7% · 2 N/A</span>
+          <div id="print-summary-bar-wrap"><div id="print-summary-bar" style="width: 7%;"></div></div>
+          <svg id="print-complete-badge" width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:none">
+            <circle cx="8" cy="8" r="7" fill="#22c55e"></circle>
+            <polyline points="4.5,8 7,10.5 11.5,5.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+        </div><div id="checklist-inner"><div class="section-heading-plain" data-depth="1">Feature Checklist</div>
+<div class="blank-line">
+</div>
+<details data-section="0" data-section-key="Introduction" data-depth="2" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Introduction<span class="section-right">
+<span class="section-na" data-section="0" hidden="">
+</span>
+<span class="section-stats" data-section="0" title="Click to check / uncheck all in this section, except N/A" hidden="">
+</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<p class="non-list-line">This is plain text — no checkbox, renders as-is. Emojis work too 😊</p>
+<p class="non-list-line">Since there are no checkboxes in this section, no progress bar appears in the header. The text is long enough to show a soft line break.</p>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="1" data-section-key="Checkbox styles" data-depth="2" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Checkbox styles<span class="section-right">
+<span class="section-na" data-section="1">
+</span>
+<span class="section-stats" data-section="1" title="Click to check / uncheck all in this section, except N/A">1/5 · 20%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesUnchecked task0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Unchecked task</span>
+</label>
+</li>
+<li class="done">
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesPre-checked task0" data-state="1" checked="">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Pre-checked task</span>
+</label>
+</li>
+<li class="na">
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesNot applicable (N/A) — excluded from progress total but shown with its own indicator on the section header. The [-] state is app-specific, not standard markdown ⚠️0" data-state="2">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Not applicable (N/A) — excluded from progress total but shown with its own indicator on the section header. The [-] state is app-specific, not standard markdown ⚠️</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesA plain bullet becomes a checkbox automatically0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">A plain bullet becomes a checkbox automatically</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesAsterisk bullet also works0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Asterisk bullet also works</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Checkbox stylesPlus bullet as well0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Plus bullet as well</span>
+</label>
+</li>
+<li class="md-block-li">
+<p class="non-list-line">• Unrecognised bullet — no checkbox is created</p>
+</li>
+<li class="md-block-li">
+<p class="non-list-line">It is good practice not to mix bullet styles in the same list.</p>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="2" data-section-key="Numbered &amp; lettered lists, Nesting" data-depth="3" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Numbered &amp; lettered lists, Nesting<span class="section-right">
+<span class="section-na" data-section="2" hidden="">
+</span>
+<span class="section-stats" data-section="2" title="Click to check / uncheck all in this section, except N/A">0/8 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nesting1. First numbered item — the number is shown in the label0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. First numbered item — the number is shown in the label</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nesting2. Second numbered item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">2. Second numbered item</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nesting3. Third item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">3. Third item</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nestinga. Letter sub-point — indented one level below numbers0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">a. Letter sub-point — indented one level below numbers</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nestingb. Another letter sub-point0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">b. Another letter sub-point</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, NestingC. Uppercase letter also works0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">C. Uppercase letter also works</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nesting1. an additional level deeper0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. an additional level deeper</span>
+</label>
+</li>
+</ul>
+</ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Numbered &amp; lettered lists, Nesting4. Back to top level0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">4. Back to top level</span>
+</label>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="3" data-section-key="Import with unindented lines" data-depth="4" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Import with unindented lines<span class="section-right">
+<span class="section-na" data-section="3" hidden="">
+</span>
+<span class="section-stats" data-section="3" title="Click to check / uncheck all in this section, except N/A">0/5 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<p class="non-list-line">Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use <code>Format → Fix list indentation</code> to make the structure explicit in the source.</p>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Import with unindented lines1. Build0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. Build</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Import with unindented lines2. Test0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">2. Test</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Import with unindented linesa. Unit0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">a. Unit</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Import with unindented linesb. Integration0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">b. Integration</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Import with unindented lines1. Deploy0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. Deploy</span>
+</label>
+</li>
+</ul>
+</ul>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="4" data-section-key="Fully completed section" data-depth="2" open="" class="section-complete">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Fully completed section<span class="section-right">
+<span class="section-na" data-section="4">
+</span>
+<span class="section-stats" data-section="4" title="Click to check / uncheck all in this section, except N/A">2/2 · 100%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li class="done">
+<label class="cb-label">
+<input type="checkbox" data-idx="Fully completed sectionfirst0" data-state="1" checked="">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">first</span>
+</label>
+</li>
+<li class="done">
+<label class="cb-label">
+<input type="checkbox" data-idx="Fully completed sectionsecond0" data-state="1" checked="">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">second</span>
+</label>
+</li>
+<li class="na">
+<label class="cb-label">
+<input type="checkbox" data-idx="Fully completed sectionnone0" data-state="2">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">none</span>
+</label>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="5" data-section-key="Inline formatting" data-depth="2" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Inline formatting<span class="section-right">
+<span class="section-na" data-section="5" hidden="">
+</span>
+<span class="section-stats" data-section="5" title="Click to check / uncheck all in this section, except N/A">0/9 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting**Bold** with double asterisks0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<strong>Bold</strong> with double asterisks</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting*Italic* with single asterisks0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<em>Italic</em> with single asterisks</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting`inline code` with backticks0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<code>inline code</code> with backticks</span>
+</label>
+</li>
+<li class="md-block-li">
+<p class="non-list-line">to copy an <code>example command</code> place it outside a task (no checkbox, no interaction)</p>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting~~Strikethrough~~ with double tildes0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<del>Strikethrough</del> with double tildes</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting==Highlighted== with double equals signs0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<mark>Highlighted</mark> with double equals signs</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formatting[Markdown cheat sheet](https://www.markdownguide.org/cheat-sheet/) — click to open in a new tab; URL shown on hover0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">
+<a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noopener noreferrer">Markdown cheat sheet</a> — click to open in a new tab; URL shown on hover</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formattingCombined: **bold and *italic* text** in one item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Combined: <strong>bold and <em>italic</em> text</strong> in one item</span>
+</label>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+<blockquote class="md-quote">Blockquotes are useful for notes or context</blockquote>
+<blockquote class="md-quote">Consecutive lines merge into one visual block</blockquote>
+<hr class="md-hr">
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formattingItem after a horizontal divider0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Item after a horizontal divider</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Inline formattingsub-item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">sub-item</span>
+</label>
+</li>
+<li class="md-block-li">
+<blockquote class="md-quote">sub blockquote</blockquote>
+</li>
+</ul>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="6" data-section-key="Non-standard line break behavior ⚠️" data-depth="2" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Non-standard line break behavior ⚠️<span class="section-right">
+<span class="section-na" data-section="6" hidden="">
+</span>
+<span class="section-stats" data-section="6" title="Click to check / uncheck all in this section, except N/A">0/3 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<p class="non-list-line">Each line in the editor creates a new element — no blank line needed (unlike standard markdown).</p>
+<p class="non-list-line">This is the second line, separated by a single newline.</p>
+<div class="blank-line">
+</div>
+<p class="non-list-line">Blank lines add visual spacing between items:</p>
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Non-standard line break behavior ⚠️Item before the gap0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Item before the gap</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Non-standard line break behavior ⚠️Another item before the gap0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Another item before the gap</span>
+</label>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Non-standard line break behavior ⚠️Item after the gap0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">Item after the gap</span>
+</label>
+</li>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<div class="section-heading-plain" data-depth="2">Edge cases</div>
+<div class="blank-line">
+</div>
+<details data-section="7" data-section-key="Parenthesis delimiter — normalised to dot in output" data-depth="4" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Parenthesis delimiter — normalised to dot in output<span class="section-right">
+<span class="section-na" data-section="7" hidden="">
+</span>
+<span class="section-stats" data-section="7" title="Click to check / uncheck all in this section, except N/A">0/4 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Parenthesis delimiter — normalised to dot in output1. First item with parenthesis0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. First item with parenthesis</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Parenthesis delimiter — normalised to dot in output2. Second item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">2. Second item</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Parenthesis delimiter — normalised to dot in outputa. Letter sub-item with parenthesis0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">a. Letter sub-item with parenthesis</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Parenthesis delimiter — normalised to dot in outputb. Another one0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">b. Another one</span>
+</label>
+</li>
+</ul>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="8" data-section-key="Letters at top level with numbered sub-items" data-depth="4" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Letters at top level with numbered sub-items<span class="section-right">
+<span class="section-na" data-section="8" hidden="">
+</span>
+<span class="section-stats" data-section="8" title="Click to check / uncheck all in this section, except N/A">0/5 · 0%</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Letters at top level with numbered sub-itemsa. First letter item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">a. First letter item</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Letters at top level with numbered sub-items1. First numbered sub-item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. First numbered sub-item</span>
+</label>
+</li>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Letters at top level with numbered sub-items2. Second numbered sub-item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">2. Second numbered sub-item</span>
+</label>
+</li>
+</ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Letters at top level with numbered sub-itemsb. Second letter item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">b. Second letter item</span>
+</label>
+</li>
+<ul>
+<li>
+<label class="cb-label">
+<input type="checkbox" data-idx="Letters at top level with numbered sub-items1. Another numbered sub-item0" data-state="0">
+<span class="cb-box">
+<svg viewBox="0 0 9 7" fill="none" aria-hidden="true">
+<polyline points="1,3.5 3.2,6 8,1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+</polyline>
+<line class="cb-dash" x1="1.5" y1="3.5" x2="7.5" y2="3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="6" stroke-dashoffset="6">
+</line>
+</svg>
+</span>
+<span class="cb-text">1. Another numbered sub-item</span>
+</label>
+</li>
+</ul>
+</ul>
+<div class="blank-line">
+</div>
+</div>
+</details>
+<details data-section="9" data-section-key="Font ligatures" data-depth="2" open="">
+<summary class="section-heading">
+<svg class="section-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="4,2 8,6 4,10">
+</polyline>
+</svg>Font ligatures<span class="section-right">
+<span class="section-na" data-section="9" hidden="">
+</span>
+<span class="section-stats" data-section="9" title="Click to check / uncheck all in this section, except N/A" hidden="">
+</span>
+</span>
+</summary>
+<div class="section-body">
+<div class="blank-line">
+</div>
+<p class="non-list-line">If <strong>Fira Code</strong> is installed on your system, character pairs render as single ligature glyphs wherever the font is active:</p>
+<div class="blank-line">
+</div>
+<p class="non-list-line">-&gt;  --&gt;  =&gt;  ==&gt;  &lt;-  &lt;--  &lt;-&gt;  &lt;=&gt;</p>
+<div class="blank-line">
+</div>
+<p class="non-list-line">Ligatures are purely visual — the underlying characters are unchanged. No ligatures appear if Fira Code is not installed; the fallback fonts do not support them.</p>
+</div>
+</details></div></div>
+</body>
+</html>
