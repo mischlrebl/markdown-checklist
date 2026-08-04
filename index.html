@@ -720,6 +720,18 @@
     details.section-complete::after { background: color-mix(in srgb, var(--accent) 55%, transparent); }
   }
 
+  details.section-empty { position: relative; }
+  details.section-empty::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+    pointer-events: none;
+  }
+
   .section-na {
     font-size: 10px;
     font-weight: 500;
@@ -1116,6 +1128,9 @@
               </button>
               <button id="bullet-btn" title="Prefix selected lines with '- ' (or the current line, if nothing is selected)">
                 <span>Prefix with -</span>
+              </button>
+              <button id="raw-bullet-btn" title="Prefix selected lines with '• ' — an unrecognized bullet, rendered as plain text instead of a checkbox (or the current line, if nothing is selected)">
+                <span>Prefix with •</span>
               </button>
               <button id="unbullet-btn" title="Remove the leading bullet, number, letter, or checkbox marker from selected lines (or the current line, if nothing is selected)">
                 <span>Remove prefix</span>
@@ -1625,6 +1640,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
   const fixIndentBtn   = document.getElementById('fix-indent-btn');
   const bulletBtn      = document.getElementById('bullet-btn');
+  const rawBulletBtn   = document.getElementById('raw-bullet-btn');
   const nestBtn        = document.getElementById('nest-btn');
   const unnestBtn      = document.getElementById('unnest-btn');
   const unbulletBtn    = document.getElementById('unbullet-btn');
@@ -1739,9 +1755,18 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       const allDone    = total > 0 && done.length === total;
       const hasNa      = all.some(cb => cb.dataset.state === '2');
       det.classList.toggle('section-complete', allDone);
+      det.classList.toggle('section-empty', total === 0);
       const naBadge = det.querySelector(`.section-na[data-section="${s}"]`);
       if (naBadge) naBadge.hidden = !hasNa;
-      if (total === 0) { span.textContent = ''; span.hidden = true; return; }
+      if (total === 0) {
+        // Keep the slot reserved (instead of collapsing it) so the N/A badge
+        // stays where the progress text would otherwise sit.
+        span.textContent = '';
+        span.hidden = false;
+        span.style.visibility = 'hidden';
+        return;
+      }
+      span.style.visibility = '';
       const pct = Math.round((done.length / total) * 100);
       span.textContent = `${done.length}/${total} · ${pct}%`;
       span.hidden = false;
@@ -2148,7 +2173,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   function matchLeadingMarker(rest) {
     const cb = rest.match(/^[-*+]\s+\[( |x|X|-)\]\s+/);
     if (cb) return cb[0];
-    const bullet = rest.match(/^[-*+]\s+/);
+    const bullet = rest.match(/^[-*+•]\s+/);
     if (bullet) return bullet[0];
     const ol = rest.match(/^(\d+|[a-zA-Z]+)[.)]\s+/);
     if (ol && (/^\d+$/.test(ol[1]) || ol[1].length === 1 || isValidRoman(ol[1]))) return ol[0];
@@ -2168,6 +2193,13 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     return marker ? indent + rest.slice(marker.length) : line;
   }
 
+  function rawBulletLine(line) {
+    const [, indent, rest] = line.match(/^([ \t]*)([\s\S]*)$/);
+    if (rest.trim() === '') return line;
+    if (rest.startsWith('• ')) return line; // already prefixed
+    return indent + '• ' + rest;
+  }
+
   function nestLine(line) {
     return line === '' ? line : '  ' + line;
   }
@@ -2180,6 +2212,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   }
 
   bulletBtn.addEventListener('click', () => applyLineTransform(bulletLine));
+  rawBulletBtn.addEventListener('click', () => applyLineTransform(rawBulletLine));
   unbulletBtn.addEventListener('click', () => applyLineTransform(unbulletLine));
   nestBtn.addEventListener('click', () => applyLineTransform(nestLine));
   unnestBtn.addEventListener('click', () => applyLineTransform(unnestLine));
