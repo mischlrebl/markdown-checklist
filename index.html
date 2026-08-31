@@ -742,8 +742,23 @@
     flex-shrink: 0;
     letter-spacing: 0.2px;
     opacity: 0.72;
+    cursor: pointer;
+    transition: color 0.14s, background 0.14s, border-color 0.14s, opacity 0.14s;
   }
   .section-na::before { content: 'N/A'; }
+  .section-na:hover {
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+  }
+  .section-na[data-empty="true"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  details > summary.section-heading:hover .section-na[data-empty="true"] {
+    opacity: 0.45;
+    pointer-events: auto;
+  }
   .section-right {
     margin-left: auto;
     display: flex;
@@ -1010,7 +1025,7 @@
             Pasting a formatted checklist (Word, Outlook, Google Docs) converts it to markdown automatically — nesting, checkboxes, and formatting like bold/italic/highlight are preserved.<br>
             <br>
             Click a checkbox to cycle: unchecked → checked → not applicable (N/A, skip).<br>
-            Click the progress stats next to a section heading to change all items in that section.<br>
+            Click the progress stats next to a section heading to change all items in that section. Hover the same spot to reveal an <strong style="color:var(--text);">N/A</strong> badge — click it to mark all unchecked items in that section as N/A, or click again to clear them.<br>
             <br>
             <strong style="color:var(--text);">Ctrl+Z</strong> undoes the last change — a checkbox toggle, a burst of typing, Format, or Clear/Load example/Check all. Only one (1) step back is kept.<br>
             <br>
@@ -1446,8 +1461,14 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     if (trimmed === '') return { type: 'blank' };
     if (/^[-*_]{3,}\s*$/.test(trimmed)) return { type: 'hr' };
     const quoteMatch = trimmed.match(/^>\s*(.*)/);
-    if (quoteMatch) return { type: 'quote', text: quoteMatch[1] };
-    return { type: 'text', text: trimmed };
+    if (quoteMatch) return { type: 'quote', level, text: quoteMatch[1] };
+    // '•' is a deliberate bullet marker this app itself inserts (see the "Prefix with •"
+    // button) — just an unrecognized one, kept as plain text instead of a checkbox. Since
+    // it's a real bullet, it should still nest by indent level even with no surrounding
+    // checkbox list to anchor to; other free-form text paragraphs shouldn't gain that
+    // list-indent behavior, so only lines actually starting with '•' get flagged.
+    const bulleted = /^•\s+/.test(trimmed);
+    return { type: 'text', level, bulleted, text: trimmed };
   }
 
   function parseMarkdown(src) {
@@ -1555,10 +1576,35 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       if (inSection) { closeLevels(); html += '</div></details>'; inSection = false; }
     }
     // Append a block element (hr, blockquote, p) respecting list context.
+    // When a list is already open, nest to the block's own indent level the same
+    // way item nodes do, so e.g. an unrecognized-bullet sub-line stays nested
+    // under its parent instead of collapsing to whatever level was last open.
+    // forceLevel additionally opens a fresh list purely for this block's own indent
+    // even when nothing is open yet — used for '•' bullets so a whole '•'-only
+    // outline nests correctly, without giving that treatment to plain paragraphs.
     // Add new block node types here; the list-wrapping logic is handled once.
-    function appendBlock(block) {
-      if (openLevels.length > 0) html += `<li class="md-block-li">${block}</li>`;
-      else { closeLevelsDownTo(-1); html += block; }
+    function appendBlock(block, level, forceLevel) {
+      if (openLevels.length === 0) {
+        if (!forceLevel) { closeLevelsDownTo(-1); html += block; return; }
+        openLevel(level || 0);
+        html += `<li class="md-block-li">${block}</li>`;
+        return;
+      }
+      if (level !== undefined) {
+        const top = openLevels[openLevels.length - 1];
+        if (level > top) {
+          openLevel(level);
+        } else if (level < top) {
+          closeLevelsDownTo(level);
+          if (openLevels.length === 0) {
+            if (!forceLevel) { closeLevelsDownTo(-1); html += block; return; }
+            openLevel(level);
+          } else if (openLevels[openLevels.length - 1] !== level) {
+            openLevel(level);
+          }
+        }
+      }
+      html += `<li class="md-block-li">${block}</li>`;
     }
 
     for (let i = 0; i < nodes.length; i++) {
@@ -1587,15 +1633,15 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
         const sectionKey = node.text.replace(/"/g, '&quot;');
         const isOpen = collapseMap[node.text] !== true;
         html += `<details data-section="${sectionIdx}" data-section-key="${sectionKey}" data-depth="${depth}"${isOpen ? ' open' : ''}>`;
-        html += `<summary class="section-heading">${CHEVRON}${renderInline(node.text)}<span class="section-right"><span class="section-na" data-section="${sectionIdx}" hidden></span><span class="section-stats" data-section="${sectionIdx}" title="Click to check / uncheck all in this section, except N/A"></span></span></summary>`;
+        html += `<summary class="section-heading">${CHEVRON}${renderInline(node.text)}<span class="section-right"><span class="section-na" data-section="${sectionIdx}" data-empty="true" hidden title="Click to mark / unmark all unchecked items in this section as N/A"></span><span class="section-stats" data-section="${sectionIdx}" title="Click to check / uncheck all in this section, except N/A"></span></span></summary>`;
         html += `<div class="section-body">`;
         inSection = true;
         continue;
       }
 
       if (node.type === 'hr')    { closeLevelsDownTo(-1); html += '<hr class="md-hr">'; continue; }
-      if (node.type === 'quote') { appendBlock(`<blockquote class="md-quote">${renderInline(node.text)}</blockquote>`); continue; }
-      if (node.type === 'text')  { appendBlock(`<p class="non-list-line">${renderInline(node.text)}</p>`); continue; }
+      if (node.type === 'quote') { appendBlock(`<blockquote class="md-quote">${renderInline(node.text)}</blockquote>`, node.level); continue; }
+      if (node.type === 'text')  { appendBlock(`<p class="non-list-line">${renderInline(node.text)}</p>`, node.level, node.bulleted); continue; }
 
       // type === 'item'
       const lvl = node.level;
@@ -1755,13 +1801,19 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
       const allDone    = total > 0 && done.length === total;
       const hasNa      = all.some(cb => cb.dataset.state === '2');
       det.classList.toggle('section-complete', allDone);
-      det.classList.toggle('section-empty', total === 0);
+      det.classList.toggle('section-empty', total === 0 && hasNa);
       const naBadge = det.querySelector(`.section-na[data-section="${s}"]`);
-      if (naBadge) naBadge.hidden = !hasNa;
+      if (naBadge) {
+        naBadge.hidden = all.length === 0;
+        naBadge.dataset.empty = hasNa ? 'false' : 'true';
+      }
       if (total === 0) {
         // Keep the slot reserved (instead of collapsing it) so the N/A badge
-        // stays where the progress text would otherwise sit.
-        span.textContent = '';
+        // stays where the progress text would otherwise sit. A truly empty
+        // string collapses the line box (no glyph metrics), shrinking the
+        // row's height until it's populated again — a non-breaking space
+        // keeps the same font-metric height as the real "n/n · pct%" text.
+        span.textContent = ' ';
         span.hidden = false;
         span.style.visibility = 'hidden';
         return;
@@ -1775,6 +1827,32 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
   output.addEventListener('click', (e) => {
     if (e.target.closest('a')) return;
+
+    const naToggle = e.target.closest('.section-na');
+    if (naToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      const det = naToggle.closest('details[data-section]');
+      if (!det) return;
+      const boxes = [...det.querySelectorAll('input[type="checkbox"]')];
+      const eligible = boxes.filter(cb => cb.dataset.state !== '1');
+      if (eligible.length === 0) return;
+      const allNa = eligible.every(cb => cb.dataset.state === '2');
+      const next = allNa ? 0 : 2;
+      pushUndo();
+      eligible.forEach(cb => {
+        const idx = cb.dataset.idx;
+        stateMap[idx] = next;
+        cb.dataset.state = next;
+        cb.checked = false;
+        const li = cb.closest('li');
+        if (li) { li.classList.toggle('done', false); li.classList.toggle('na', next === 2); }
+      });
+      saveState(stateMap);
+      updateProgress();
+      updateSectionStats();
+      return;
+    }
 
     const stats = e.target.closest('.section-stats');
     if (stats) {
