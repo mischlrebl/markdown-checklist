@@ -548,8 +548,109 @@
   }
 
 
-  #md-input {
+  #editor-wrap {
+    position: relative;
     flex: 1;
+    min-height: 0;
+  }
+
+  /* overflow:auto with its native scrollbar left showing (not hidden) is deliberate: it
+     needs to reserve the exact same width #md-input's own scrollbar reserves, or the two
+     layers wrap long lines at different widths and drift out of alignment. Faking that
+     width (scrollbar-gutter:stable, or hiding both and matching some other way) turned out
+     unreliable — a real scrollbar here is the one thing guaranteed to match #md-input's
+     exactly. It's invisible in practice anyway: #md-input sits on top in paint order and
+     its own scrollbar (same position, same size) fully covers this one. */
+  #md-backdrop {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    pointer-events: none;
+    background: var(--surface);
+  }
+
+  #md-highlight {
+    min-height: 100%;
+    padding: 16px 18px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text);
+    tab-size: 2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  #md-current-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--accent-subtle);
+    pointer-events: none;
+  }
+
+  /* Invisible clone of #md-highlight, used only to measure where the caret's
+     visual row lands — accounts for soft-wrapped lines, which a plain
+     newline count can't (a wrapped line pushes every row below it down by
+     one row height that a per-\n count doesn't know about). */
+  #md-caret-mirror {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    visibility: hidden;
+    padding: 16px 18px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    tab-size: 2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .mk { opacity: 0.45; }
+  #md-highlight .hl-indent { color: var(--text-muted); opacity: 0.4; }
+  /* The task/list marker itself isn't decoration like # or ** — it's the one character
+     that decides whether a line becomes an interactive checkbox, so fading it the same
+     way would hide the most important signal in the editor. A background chip instead of
+     a text fade keeps it a full-strength, easy-to-scan anchor. No padding/border, same
+     alignment reason as .hl-code/.hl-mark below. Neutral gray rather than --accent-subtle,
+     which the app already uses elsewhere specifically to mean "code" — reusing it here
+     would make a task marker and an inline code span look like the same thing. */
+  #md-highlight .hl-task-marker { background: var(--border); border-radius: 3px; }
+  #md-highlight .hl-heading { font-weight: 700; }
+  #md-highlight .hl-checkbox { font-weight: 600; }
+  #md-highlight .hl-cb-open { color: var(--text-muted); }
+  #md-highlight .hl-cb-done { color: var(--accent); }
+  #md-highlight .hl-cb-na   { color: var(--done-color); }
+  #md-highlight .hl-quote   { font-style: italic; color: var(--text-muted); }
+  #md-highlight strong { font-weight: 700; }
+  #md-highlight em { font-style: italic; }
+  #md-highlight del { text-decoration: line-through; opacity: 0.7; }
+  #md-highlight .hl-link { color: var(--accent); }
+  /* No padding/border here (unlike the real preview's equivalent styling) — any
+     property that changes an inline span's width would push every character
+     after it out of alignment with the real (invisible) text underneath, since
+     the two must match pixel-for-pixel for the overlay trick to work. */
+  #md-highlight .hl-code {
+    font-family: inherit;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: 3px;
+  }
+  #md-highlight .hl-mark {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 3px;
+  }
+  @media (prefers-color-scheme: dark) {
+    #md-highlight .hl-mark { background: #422006; color: #fcd34d; }
+  }
+
+  #md-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     padding: 16px 18px;
     border: none;
     outline: none;
@@ -557,11 +658,22 @@
     font-family: "SF Mono", "Fira Code", "Consolas", monospace;
     font-size: 12.5px;
     line-height: 1.75;
-    background: var(--surface);
-    color: var(--text);
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text);
     tab-size: 2;
   }
   #md-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  /* Raw mode: falls all the way back to a plain textarea, bypassing the highlighting
+     overlay entirely (not just hiding it) — a deliberate escape hatch for when the
+     highlighting itself is suspected of being wrong, since the overlay can otherwise make
+     the real underlying text hard to trust while debugging it. */
+  #editor-wrap.raw-editor #md-backdrop { visibility: hidden; }
+  #editor-wrap.raw-editor #md-input {
+    color: var(--text);
+    background: var(--surface);
+  }
 
   /* --- Output --- */
 
@@ -842,6 +954,19 @@
   #checklist-output li.md-block-li { display: block; padding: 0 0 0 25px; margin: 0; background: none; }
   #checklist-output li.md-block-li:hover { background: none; }
 
+  /* A nested '•' line is a real sibling list item, not hanging continuation text like a
+     blockquote/hr — the flat 25px indent above stacks on top of this <li>'s own nested-ul
+     indent, landing under a sibling item's *text* instead of aligning with its checkbox
+     the way a peer <li> should. Matching a regular <li>'s own padding instead lines it up
+     correctly, without touching blockquotes/hr which keep the rule above unchanged. */
+  #checklist-output li.md-block-li:has(> .md-bullet-text) { padding: 4px 8px; }
+  /* The '•' glyph itself carries noticeable built-in left-side blank space in this font
+     (unlike the checkbox graphic, which fills its box edge-to-edge), so even with matching
+     box padding above, the dot's visible ink still lands ~10px right of a sibling
+     checkbox's edge. A negative text-indent pulls just the first line (the one starting
+     with '•') left to compensate, without affecting any wrapped continuation lines. */
+  .md-bullet-text { text-indent: -10px; }
+
   .md-hr {
     border: none;
     border-top: 1px solid var(--border);
@@ -868,6 +993,24 @@
     border-radius: 0;
   }
   .md-quote + .md-quote:not(:has(+ .md-quote)) {
+    border-radius: 0 0 4px 0;
+  }
+
+  /* Nested blockquotes (indented under a list item) each get wrapped in their own
+     <li class="md-block-li"> by appendBlock, so consecutive ones aren't direct siblings
+     and the rules above never match. Mirror the same three rules one level up, through
+     the <li> wrappers, so nested consecutive quotes merge into one block too. */
+  li.md-block-li:has(> .md-quote):has(+ li.md-block-li > .md-quote) > .md-quote {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-radius: 0 4px 0 0;
+  }
+  li.md-block-li:has(> .md-quote) + li.md-block-li:has(> .md-quote) > .md-quote {
+    margin-top: 0;
+    padding-top: 0;
+    border-radius: 0;
+  }
+  li.md-block-li:has(> .md-quote) + li.md-block-li:has(> .md-quote):not(:has(+ li.md-block-li > .md-quote)) > .md-quote {
     border-radius: 0 0 4px 0;
   }
 
@@ -1150,6 +1293,9 @@
               <button id="unbullet-btn" title="Remove the leading bullet, number, letter, or checkbox marker from selected lines (or the current line, if nothing is selected)">
                 <span>Remove prefix</span>
               </button>
+              <button id="raw-mode-btn" title="Toggle the editor between styled syntax highlighting and plain, unstyled text — useful when the highlighting itself looks wrong and you need to see the real underlying text">
+                <span id="raw-mode-label">Hide syntax highlighting</span>
+              </button>
             </div>
           </span>
 
@@ -1175,13 +1321,13 @@
                 <tr><td>## Heading</td><td>Collapsible section</td></tr>
                 <tr><td>- [ ] text</td><td>Unchecked task</td></tr>
                 <tr><td>- [x] text</td><td>Pre-checked task</td></tr>
-                <tr><td>- [-] text</td><td>Pre-marked N/A task</td></tr>
+                <tr><td>- [-] text</td><td>Pre-marked N/A task*</td></tr>
                 <tr><td>- text</td><td>Bullet → checkbox</td></tr>
                 <tr><td>* text &nbsp;+ text</td><td>Also bullets</td></tr>
                 <tr><td>1. text</td><td>Numbered (number shown)</td></tr>
                 <tr><td>&nbsp;&nbsp;a. text</td><td>Letter sub-item (2 spaces indent)</td></tr>
                 <tr><td>&nbsp;&nbsp;- sub</td><td>2 spaces or tab = nesting</td></tr>
-                <tr><td>(blank line)</td><td>Visual spacer in output</td></tr>
+                <tr><td>(blank line)</td><td>Visual spacer in output*</td></tr>
                 <tr><td>plain text</td><td>Rendered as-is, no checkbox</td></tr>
                 <tr><td>---</td><td>Horizontal divider</td></tr>
                 <tr><td>&gt; text</td><td>Blockquote</td></tr>
@@ -1194,6 +1340,7 @@
                 <tr><td>[label](url)</td><td>Link (opens in new tab)</td></tr>
               </table>
               <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+                <p style="font-size:11px;color:var(--text-muted);margin:0 0 10px;">* Not standard markdown behavior.</p>
                 <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px;">The example covers all syntax cases above.</p>
                 <button id="load-example-btn">Load example</button>
               </div>
@@ -1201,7 +1348,9 @@
           </span>
         </div>
       </div>
-      <textarea id="md-input" spellcheck="false" autocomplete="off" placeholder="Paste your markdown list here…
+      <div id="editor-wrap">
+        <div id="md-backdrop" aria-hidden="true"><div id="md-current-line"></div><div id="md-highlight"></div><div id="md-caret-mirror"></div></div>
+        <textarea id="md-input" spellcheck="false" autocomplete="off" placeholder="Paste your markdown list here…
 
 Example:
 ## Shopping
@@ -1217,6 +1366,7 @@ Example:
   - Integration tests
 1. Deploy to staging
 2. Notify team"></textarea>
+      </div>
     </div>
     <div id="output-panel">
       <div class="panel-label">
@@ -1314,6 +1464,7 @@ Example:
   const LS_COLLAPSE = 'checklist-collapse';
   const LS_HIDE     = 'checklist-hide';
   const LS_MINI     = 'checklist-mini';
+  const LS_RAW      = 'checklist-raw-editor';
 
   const EXAMPLE = `# Feature Checklist
 
@@ -1346,7 +1497,7 @@ It is good practice not to mix bullet styles in the same list.
 
 #### Import with unindented lines
 
-Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use \`Format → Fix list indentation\` to make the structure explicit in the source.
+Paste any list — from a document, spreadsheet, or plain text, not just markdown. Auto-nested correctly in the checklist. Use \`Format > Fix list indentation\` to make the structure explicit in the source.
 1. Build
 2. Test
 a. Unit
@@ -1551,6 +1702,107 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     return s;
   }
 
+  // Editor overlay: same inline-formatting rules as renderInline, but markers are
+  // kept (dimmed via .mk) rather than dropped, since this mirrors raw source text
+  // sitting under the real (invisible) textarea — characters can't disappear or
+  // the two would drift out of sync character-for-character.
+  function highlightInline(text) {
+    let s = escapeHtml(text);
+    const protectedSpans = [];
+    function protect(html) {
+      protectedSpans.push(html);
+      return `\x00${protectedSpans.length - 1}\x00`;
+    }
+
+    s = s.replace(/`([^`\n]+)`/g, (_, c) =>
+      protect(`<span class="mk">\`</span><span class="hl-code">${c}</span><span class="mk">\`</span>`));
+
+    s = s.replace(/\[([^\]\n]*)\]\(([^)\n]*)\)/g, (_, label, url) =>
+      protect(`<span class="mk">[</span><span class="hl-link">${label}</span><span class="mk">](${url})</span>`));
+
+    s = s.replace(/\*\*(.+?)\*\*/g, (_, c) => protect(`<span class="mk">**</span><strong>${c}</strong><span class="mk">**</span>`));
+    s = s.replace(/__(.+?)__/g, (_, c) => protect(`<span class="mk">__</span><strong>${c}</strong><span class="mk">__</span>`));
+
+    s = s.replace(/\*(.+?)\*/g, (_, c) => protect(`<span class="mk">*</span><em>${c}</em><span class="mk">*</span>`));
+
+    s = s.replace(/~~(.+?)~~/g, (_, c) => protect(`<span class="mk">~~</span><del>${c}</del><span class="mk">~~</span>`));
+
+    s = s.replace(/==(.+?)==/g, (_, c) => protect(`<span class="mk">==</span><mark class="hl-mark">${c}</mark><span class="mk">==</span>`));
+
+    // A protected span (e.g. italic) can end up with an earlier one (e.g. bold) nested
+    // inside its own captured text, when the later regex's match happens to swallow an
+    // already-protected placeholder along with real text around it — restoring it back
+    // then exposes another placeholder that still needs resolving. Loop until none remain,
+    // instead of a single pass that would otherwise leak raw placeholder text into the HTML.
+    while (/\x00\d+\x00/.test(s)) {
+      s = s.replace(/\x00(\d+)\x00/g, (_, i) => protectedSpans[+i]);
+    }
+
+    return s;
+  }
+
+  // Renders leading indentation as light-gray dots (one per space; two for a tab, since
+  // tab-size:2 makes a tab occupy the same width as two spaces) instead of blank space, so
+  // nesting depth reads at a glance. Swapping each whitespace character for exactly one
+  // dot character keeps the substitution width-neutral in a monospace font, which is what
+  // matters here — anything that changed width would misalign the overlay with the real
+  // (invisible) text underneath, the same class of bug fixed earlier for .hl-code/.hl-mark.
+  function renderIndent(ws) {
+    if (!ws) return '';
+    let dots = '';
+    for (const ch of ws) dots += ch === '\t' ? '··' : '·';
+    return `<span class="hl-indent">${dots}</span>`;
+  }
+
+  // Structural (line-prefix) highlighting — heading/list/checkbox/hr markers, mirroring
+  // parseLine's own regexes and match order so the overlay never flags a marker the real
+  // parser wouldn't also treat as one. Only the marker itself is dimmed; the remaining
+  // text on the line still goes through highlightInline for bold/italic/etc.
+  function highlightLine(line) {
+    const leadWs = line.match(/^\s*/)[0];
+    const trimmed = line.slice(leadWs.length);
+    const lead = renderIndent(leadWs);
+    let m;
+
+    if ((m = trimmed.match(/^(#{1,6})(\s+)(.+)/))) {
+      const [, hashes, ws, rest] = m;
+      return `${lead}<span class="mk">${hashes}</span>${escapeHtml(ws)}<span class="hl-heading">${highlightInline(rest)}</span>`;
+    }
+
+    if ((m = trimmed.match(/^([-*+])(\s+)\[( |x|X|-)\](\s+)(.*)/))) {
+      const [, bullet, ws1, state, ws2, rest] = m;
+      const s = state.toLowerCase();
+      const stateClass = s === 'x' ? 'hl-cb-done' : s === '-' ? 'hl-cb-na' : 'hl-cb-open';
+      return `${lead}<span class="hl-task-marker">${bullet}</span>${escapeHtml(ws1)}<span class="hl-checkbox ${stateClass}">[${state}]</span>${escapeHtml(ws2)}${highlightInline(rest)}`;
+    }
+
+    if ((m = trimmed.match(/^(\d+|[a-zA-Z]+)([.)])(\s+)(.*)/)) &&
+        (/^\d+$/.test(m[1]) || m[1].length === 1 || isValidRoman(m[1]))) {
+      const [, marker, punct, ws, rest] = m;
+      return `${lead}<span class="hl-task-marker">${marker}</span><span class="mk">${punct}</span>${escapeHtml(ws)}${highlightInline(rest)}`;
+    }
+
+    if ((m = trimmed.match(/^([-*+])(\s+)(.*)/))) {
+      const [, bullet, ws, rest] = m;
+      return `${lead}<span class="hl-task-marker">${bullet}</span>${escapeHtml(ws)}${highlightInline(rest)}`;
+    }
+
+    if (/^[-*_]{3,}\s*$/.test(trimmed)) {
+      return `${lead}<span class="mk">${escapeHtml(trimmed)}</span>`;
+    }
+
+    if ((m = trimmed.match(/^(>)(\s*)(.*)/))) {
+      const [, marker, ws, rest] = m;
+      return `${lead}<span class="mk">${marker}</span>${escapeHtml(ws)}<span class="hl-quote">${highlightInline(rest)}</span>`;
+    }
+
+    return `${lead}${highlightInline(trimmed)}`;
+  }
+
+  function highlightSource(text) {
+    return text.split('\n').map(highlightLine).join('\n');
+  }
+
   function renderNodes(nodes, stateMap, collapseMap) {
     const nonBlank = nodes.filter(n => n.type !== 'blank');
     if (nonBlank.length === 0) {
@@ -1559,19 +1811,25 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
     let html = '';
     let openLevels = [];
+    // Parallel to openLevels: was the list at this depth opened by a forced ('•') block,
+    // as opposed to a regular item (checkbox or plain bullet)? A '•' line should only ever
+    // join an existing list as a peer when that list is itself part of the same '•' run —
+    // never a task's or plain bullet's list just because it happens to still be open at
+    // the same level (see appendBlock).
+    let openForced = [];
     let inSection = false;
     let sectionIdx = -1;
     let seenContent = false;
 
     function closeLevels() {
-      while (openLevels.length > 0) { html += '</ul>'; openLevels.pop(); }
+      while (openLevels.length > 0) { html += '</ul>'; openLevels.pop(); openForced.pop(); }
     }
     function closeLevelsDownTo(target) {
       while (openLevels.length > 0 && openLevels[openLevels.length - 1] > target) {
-        html += '</ul>'; openLevels.pop();
+        html += '</ul>'; openLevels.pop(); openForced.pop();
       }
     }
-    function openLevel(level) { html += '<ul>'; openLevels.push(level); }
+    function openLevel(level, forced) { html += '<ul>'; openLevels.push(level); openForced.push(!!forced); }
     function closeSection() {
       if (inSection) { closeLevels(); html += '</div></details>'; inSection = false; }
     }
@@ -1586,21 +1844,29 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     function appendBlock(block, level, forceLevel) {
       if (openLevels.length === 0) {
         if (!forceLevel) { closeLevelsDownTo(-1); html += block; return; }
-        openLevel(level || 0);
+        openLevel(level || 0, true);
         html += `<li class="md-block-li">${block}</li>`;
         return;
       }
       if (level !== undefined) {
         const top = openLevels[openLevels.length - 1];
+        const topForced = openForced[openForced.length - 1];
+        const continuesForcedRun = forceLevel && level === top && topForced;
+
         if (level > top) {
-          openLevel(level);
-        } else if (level < top) {
-          closeLevelsDownTo(level);
+          openLevel(level, forceLevel);
+        } else if (!continuesForcedRun && level <= top) {
+          // Neither plain content nor a '•' line landing on an unrelated (non-'•') list
+          // should silently inherit that list's indentation — close down to one level
+          // shallower than this block's own indent first. Without this, e.g. a plain
+          // unindented paragraph or a '•' line right after a task fell through to the
+          // shared "append <li>" below and joined that task's list as a peer item.
+          closeLevelsDownTo(level - 1);
           if (openLevels.length === 0) {
-            if (!forceLevel) { closeLevelsDownTo(-1); html += block; return; }
-            openLevel(level);
+            if (forceLevel) { openLevel(level, true); }
+            else { html += block; return; }
           } else if (openLevels[openLevels.length - 1] !== level) {
-            openLevel(level);
+            openLevel(level, forceLevel);
           }
         }
       }
@@ -1641,7 +1907,19 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
 
       if (node.type === 'hr')    { closeLevelsDownTo(-1); html += '<hr class="md-hr">'; continue; }
       if (node.type === 'quote') { appendBlock(`<blockquote class="md-quote">${renderInline(node.text)}</blockquote>`, node.level); continue; }
-      if (node.type === 'text')  { appendBlock(`<p class="non-list-line">${renderInline(node.text)}</p>`, node.level, node.bulleted); continue; }
+      // A '•' line only gets the forced-nesting treatment once it's actually indented —
+      // at level 0 it renders as plain text like any other paragraph (this is the one
+      // line type where forceLevel depends on more than just node.bulleted; blockquotes
+      // and hr never pass forceLevel at all, so they're unaffected by this).
+      if (node.type === 'text') {
+        const nested = node.bulleted && node.level > 0;
+        // A nested '•' line is a real sibling list item (next to other <li>s at the same
+        // depth), not hanging continuation text — it needs the .md-block-li override below
+        // to align like one, unlike blockquotes/hr which keep the plain 25px indent as-is.
+        const cls = nested ? 'non-list-line md-bullet-text' : 'non-list-line';
+        appendBlock(`<p class="${cls}">${renderInline(node.text)}</p>`, node.level, nested);
+        continue;
+      }
 
       // type === 'item'
       const lvl = node.level;
@@ -1656,6 +1934,12 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
         } else if (lvl < top) {
           closeLevelsDownTo(lvl);
           if (openLevels.length === 0 || openLevels[openLevels.length - 1] !== lvl) openLevel(lvl);
+        } else if (openForced[openForced.length - 1]) {
+          // A regular item shouldn't silently join a '•'-only list left open at the same
+          // level — close it and start its own fresh (non-forced) list instead, the same
+          // way appendBlock refuses to let unrelated content join a forced list.
+          closeLevelsDownTo(lvl - 1);
+          openLevel(lvl);
         }
       }
 
@@ -1691,6 +1975,10 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   const unnestBtn      = document.getElementById('unnest-btn');
   const unbulletBtn    = document.getElementById('unbullet-btn');
   const textarea       = document.getElementById('md-input');
+  const mdBackdrop     = document.getElementById('md-backdrop');
+  const mdHighlight    = document.getElementById('md-highlight');
+  const mdCurrentLine  = document.getElementById('md-current-line');
+  const mdCaretMirror  = document.getElementById('md-caret-mirror');
   const output         = document.getElementById('checklist-output');
   const outputContent  = document.getElementById('checklist-inner');
   const clearBtn       = document.getElementById('clear-btn');
@@ -1744,7 +2032,109 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     outputContent.innerHTML = renderNodes(parsedNodes, stateMap, collapseMap);
     updateSectionStats();
     updateProgress();
+    // Pad with one trailing space when the text ends in "\n" — same reason as the caret
+    // mirror below: a pre-wrap element doesn't reserve a visible row for a bare trailing
+    // newline, so the last blank line otherwise silently has zero height and disappears.
+    // Appended after highlightSource runs, so it's plain trailing text, not seen by any
+    // per-line marker/indent logic.
+    const highlighted = highlightSource(textarea.value);
+    mdHighlight.innerHTML = textarea.value.endsWith('\n') ? highlighted + ' ' : highlighted;
+    updateCurrentLine();
   }
+
+  // A line box's geometric center (per CSS line-height math) isn't where text visually
+  // sits — most monospace fonts carry more headroom above the glyphs than below, so the
+  // current-line band looked top-heavy when centered on the box instead of the ink. There's
+  // no reliable API to derive the exact correction: DOM Range and Canvas TextMetrics each
+  // report a different notion of "ascent/descent" that doesn't line up with how the CSS line
+  // box is actually laid out, and neither matched the real rendered pixels when checked
+  // against a screenshot. This fixed fraction was instead reverse-engineered by directly
+  // measuring rendered pixels (how far above the line box's own center the ink actually
+  // sits, as a fraction of line-height) for this font stack, and is applied as a proportion
+  // of line-height so it scales sanely if font-size ever changes.
+  const LINE_CENTER_CORRECTION = -0.11;
+
+  // Measures the caret's row via a Range over the mirror's own (unmodified) text node,
+  // rather than inserting a marker element at the caret position. An inserted element —
+  // even an empty <span>, as this used to do — can itself act as a line-break opportunity
+  // inside a long unbroken run like a URL, wrapping the mirror one character earlier than
+  // the real textarea and throwing off every row below it on that line. A Range doesn't
+  // touch the text, so it can't perturb wrapping.
+  //
+  // A zero-width (collapsed) range exactly at a soft-wrap point is itself ambiguous —
+  // browsers can report it as belonging to the end of the row above rather than the start
+  // of the row below, where the real textarea actually draws its caret. Spanning the range
+  // over the next character instead of collapsing it resolves that ambiguity the same way
+  // the real caret does, since that character unambiguously belongs to one row.
+  //
+  // Trailing newlines need one more fix on top of that: a `white-space:pre-wrap` element
+  // (this mirror, same as #md-highlight) doesn't reserve a visible row for the very last
+  // "\n" the way a real <textarea> does — text ending "a\n" and "a\n\n" render at the same
+  // height, one blank line short. That both loses the blank line visually in the styled
+  // overlay and, worse, leaves nothing for the "peek next character" trick above to peek at
+  // once the caret sits in that uncounted row, so the band gets stuck instead of following
+  // the caret down through trailing blank lines. Padding with one harmless trailing
+  // character whenever the text ends in "\n" gives every real offset a genuine next
+  // character to measure against, fixing both at once.
+  function updateCurrentLine() {
+    const pos = textarea.selectionStart;
+    const value = textarea.value;
+    mdCaretMirror.textContent = value.endsWith('\n') ? value + ' ' : value;
+    const textNode = mdCaretMirror.firstChild;
+    const mirrorTop = mdCaretMirror.getBoundingClientRect().top;
+    let top = 0;
+    if (textNode) {
+      const len = textNode.length;
+      const offset = Math.min(pos, len);
+      const range = document.createRange();
+      if (offset < len) {
+        range.setStart(textNode, offset);
+        range.setEnd(textNode, offset + 1);
+      } else {
+        range.setStart(textNode, Math.max(0, offset - 1));
+        range.setEnd(textNode, offset);
+      }
+      let rects = range.getClientRects();
+      if (rects.length === 0) {
+        range.setStart(textNode, offset);
+        range.setEnd(textNode, offset);
+        rects = range.getClientRects();
+      }
+      if (rects.length > 0) top = rects[0].top - mirrorTop;
+    }
+    const lineHeightPx = parseFloat(getComputedStyle(textarea).lineHeight);
+    mdCurrentLine.style.top    = `${top + LINE_CENTER_CORRECTION * lineHeightPx}px`;
+    mdCurrentLine.style.height = `${lineHeightPx}px`;
+  }
+
+  ['click', 'keyup', 'select'].forEach(evt => textarea.addEventListener(evt, updateCurrentLine));
+
+  // Double-click word selection can include a trailing (sometimes leading) space
+  // depending on the browser's own word-boundary rules — trim it back to just the word.
+  textarea.addEventListener('dblclick', () => {
+    const value = textarea.value;
+    let start = textarea.selectionStart;
+    let end   = textarea.selectionEnd;
+    while (end > start && /\s/.test(value[end - 1])) end--;
+    while (start < end && /\s/.test(value[start])) start++;
+    if (start !== textarea.selectionStart || end !== textarea.selectionEnd) {
+      textarea.setSelectionRange(start, end);
+    }
+  });
+
+  // A real <textarea>'s native scrollHeight tends to run slightly taller than this plain-div
+  // backdrop's (an inherent browser quirk, not something under our control) — often by close
+  // to a full line, all reserved at the very bottom rather than spread through the content.
+  // A direct 1:1 copy is correct everywhere except once textarea.scrollTop exceeds what the
+  // backdrop can actually reach, right at the end — so just clamp there instead of scaling
+  // the whole range by a ratio: scaling was tried first and made things worse, distorting
+  // every row in between to fix only the exact endpoint, since it wrongly assumed the gap
+  // was spread proportionally across the whole document instead of sitting only at the end.
+  textarea.addEventListener('scroll', () => {
+    const bdMax = mdBackdrop.scrollHeight - mdBackdrop.clientHeight;
+    mdBackdrop.scrollTop  = Math.min(textarea.scrollTop, bdMax);
+    mdBackdrop.scrollLeft = textarea.scrollLeft;
+  });
 
   function coerceState(v) { return v === true ? 1 : v === false ? 0 : (v || 0); }
   function itemState(n) {
@@ -2650,6 +3040,20 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
     document.getElementById('app').classList.toggle('mini', mini);
   }
 
+  const rawModeBtn   = document.getElementById('raw-mode-btn');
+  const rawModeLabel = document.getElementById('raw-mode-label');
+
+  function applyRawMode(raw) {
+    document.getElementById('editor-wrap').classList.toggle('raw-editor', raw);
+    rawModeLabel.textContent = raw ? 'Show syntax highlighting' : 'Hide syntax highlighting';
+  }
+
+  rawModeBtn.addEventListener('click', () => {
+    const nowRaw = !document.getElementById('editor-wrap').classList.contains('raw-editor');
+    applyRawMode(nowRaw);
+    localStorage.setItem(LS_RAW, nowRaw ? '1' : '0');
+  });
+
   miniBtn.addEventListener('click', () => {
     const nowMini = !document.getElementById('app').classList.contains('mini');
     applyMiniState(nowMini);
@@ -2734,6 +3138,7 @@ Ligatures are purely visual — the underlying characters are unchanged. No liga
   textarea.value = saved || EXAMPLE;
   applyHideState(localStorage.getItem(LS_HIDE) === '1');
   applyMiniState(localStorage.getItem(LS_MINI) === '1');
+  applyRawMode(localStorage.getItem(LS_RAW) === '1');
   updateDirty();
   render();
   const initDet = [...outputContent.querySelectorAll('details[data-section]')];
